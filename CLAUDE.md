@@ -6,14 +6,14 @@ A minimalist infinite quiz game inspired by the Swedish card game MIG. Players r
 
 - **Format**: 5 questions per card, one from each category
 - **Categories**: Now & Then, Entertainment & Culture, Near & Far, Sport & Misc, Science & Tech
-- **Infinite**: Vertex AI generates questions on-demand with local caching
+- **Infinite**: Gemini Developer AI generates questions on-demand with local caching
 - **Bilingual**: Swedish and English support
 - **Adaptive**: Difficulty adjusts based on player performance
 
 ## Tech Stack
 
 - **Framework**: Flutter (targeting Web & Android)
-- **AI**: Firebase Vertex AI for question generation
+- **AI**: Firebase Gemini Developer AI for question generation
 - **Storage**: Local storage (SharedPreferences + Hive for question cache)
 - **State Management**: Riverpod
 - **Fonts**: Google Fonts (Inter)
@@ -213,7 +213,7 @@ class CategoryStats {
 
 ## Question Generation
 
-### Vertex AI Prompt Structure
+### Gemini Developer AI Prompt Structure
 
 ```
 Generate a {difficulty} {category} trivia question in both Swedish and English.
@@ -303,7 +303,7 @@ lib/
 │
 ├── services/
 │   ├── question_service.dart       # Orchestrates generation + cache
-│   ├── vertex_ai_service.dart      # AI question generation
+│   ├── gemini_ai_service.dart      # AI question generation
 │   ├── question_cache_service.dart # Hive-based local storage
 │   ├── stats_service.dart          # Player statistics
 │   └── settings_service.dart       # App preferences
