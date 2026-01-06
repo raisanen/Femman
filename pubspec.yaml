@@ -1,5 +1,5 @@
 name: femman
-description: "A new Flutter project."
+description: "A minimalist infinite quiz game inspired by MIG"
 publish_to: 'none'
 version: 0.1.0
 
@@ -10,10 +10,29 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # State management
+  flutter_riverpod: ^2.4.0
+  riverpod_annotation: ^2.3.0
+
+  # Firebase & AI
+  firebase_core: ^2.24.0
+  firebase_vertexai: ^0.1.0
+
+  # Local storage
+  hive_flutter: ^1.1.0
+  shared_preferences: ^2.2.0
+
+  # Utilities
+  uuid: ^4.2.0
+  google_fonts: ^6.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  build_runner: ^2.4.0
+  riverpod_generator: ^2.3.0
+  hive_generator: ^2.0.0
 
 flutter:
   uses-material-design: true

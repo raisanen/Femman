@@ -1,0 +1,1 @@
+// Hive-based local storage
