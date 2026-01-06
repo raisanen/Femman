@@ -1,11 +1,12 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:femman/core/constants/app_spacing.dart';
 import 'package:femman/core/constants/app_strings.dart';
 import 'package:femman/core/theme/app_colors.dart';
 import 'package:femman/core/theme/app_theme.dart';
+import 'package:femman/firebase_options.dart';
 import 'package:femman/features/home/home_screen.dart';
 import 'package:femman/features/quiz/quiz_screen.dart';
 import 'package:femman/features/results/results_screen.dart';
@@ -49,11 +50,18 @@ class _FemmanAppState extends ConsumerState<FemmanApp> {
     // Initialize Hive
     await Hive.initFlutter();
 
-    // Initialize Firebase (best-effort)
-    try {
-      await Firebase.initializeApp();
-    } catch (_) {
-      // In this minimalist app, failure to init Firebase should not crash the UI.
+    // Determine if we are running in mock mode (no Firebase / Gemini)
+    const mockMode = bool.fromEnvironment('MOCK_MODE', defaultValue: false);
+
+    // Initialize Firebase (best-effort, skipped in mock mode)
+    if (!mockMode) {
+      try {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      } catch (_) {
+        // In this minimalist app, failure to init Firebase should not crash the UI.
+      }
     }
 
     // Initialize settings (SharedPreferences)
@@ -64,14 +72,13 @@ class _FemmanAppState extends ConsumerState<FemmanApp> {
     final statsService = ref.read(statsServiceProvider);
     await statsService.init();
 
-    // Initialize question service (Hive cache + Gemini)
+    // Initialize question service (Hive cache + Gemini or mock mode)
     final questionService = ref.read(questionServiceProvider);
     const apiKey = String.fromEnvironment('GEMINI_API_KEY');
-    if (apiKey.isNotEmpty) {
-      await questionService.init(geminiApiKey: apiKey);
-      // Optionally warm up cache on startup
-      await ref.read(quizNotifierProvider.notifier).warmupCache();
-    }
+    await questionService.init(geminiApiKey: mockMode ? '' : apiKey);
+
+    // Optionally warm up cache on startup (no-op if cache is already healthy / mock with no AI)
+    await ref.read(quizNotifierProvider.notifier).warmupCache();
   }
 
   @override

@@ -13,6 +13,8 @@ class QuestionService {
   final QuestionCacheService _cacheService;
   final GeminiAIService _aiService;
 
+  bool _mockMode = false;
+
   // Cache health thresholds
   static const int _minQuestionsPerCategoryDifficulty = 10;
   static const int _prefetchBatchSize = 5;
@@ -26,9 +28,18 @@ class QuestionService {
   })  : _cacheService = cacheService,
         _aiService = aiService;
 
-  /// Initialize all sub-services
+  /// Initialize all sub-services.
+  ///
+  /// If [geminiApiKey] is empty, the service runs in "mock" mode:
+  /// - Only cached / seeded questions are used
+  /// - No calls are made to Gemini Developer API
   Future<void> init({required String geminiApiKey}) async {
     await _cacheService.init();
+    if (geminiApiKey.isEmpty) {
+      _mockMode = true;
+      return;
+    }
+    _mockMode = false;
     await _aiService.init(apiKey: geminiApiKey);
   }
 
@@ -42,8 +53,17 @@ class QuestionService {
       final difficulty = difficulties[category] ?? Difficulty.easy;
       Question? question = _cacheService.getQuestion(category, difficulty);
 
-      // If cache miss, generate on-demand
-      question ??= await _generateQuestionOnDemand(category, difficulty);
+      // If cache miss, generate on-demand (unless in mock mode)
+      if (question == null && !_mockMode) {
+        question = await _generateQuestionOnDemand(category, difficulty);
+      }
+
+      // In mock mode, if still null, throw a clear error
+      if (question == null && _mockMode) {
+        throw Exception(
+          'No cached questions available for $category at $difficulty in mock mode.',
+        );
+      }
 
       questions.add(question);
     }

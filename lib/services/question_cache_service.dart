@@ -9,7 +9,7 @@ import '../models/difficulty.dart';
 class QuestionCacheService {
   static const String _questionsBoxName = 'questions';
   static const String _usedQuestionsBoxName = 'used_questions';
-  static const int _maxCacheSize = 500;
+  static const int _maxCacheSize = 1500;
   static const int _recentUsageWindow = 50; // Avoid repeating last 50 questions
 
   late Box<Question> _questionsBox;
