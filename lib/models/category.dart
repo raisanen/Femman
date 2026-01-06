@@ -1,14 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import '../core/theme/app_colors.dart';
 import '../core/constants/app_strings.dart';
 
+part 'category.g.dart';
+
 /// Quiz question categories matching the MIG card game format.
 /// Each card contains one question from each category.
+@HiveType(typeId: 1)
 enum Category {
+  @HiveField(0)
   nowThen, // Nu & Då / Now & Then
+
+  @HiveField(1)
   entertainment, // Nöje & Kultur / Entertainment & Culture
+
+  @HiveField(2)
   nearFar, // Nära & Fjärran / Near & Far
+
+  @HiveField(3)
   sportMisc, // Sport & Blandat / Sport & Misc
+
+  @HiveField(4)
   scienceTech, // Vetenskap & Teknik / Science & Tech
 }
 

@@ -1,10 +1,19 @@
+import 'package:hive/hive.dart';
 import '../core/constants/app_strings.dart';
+
+part 'difficulty.g.dart';
 
 /// Question difficulty levels for adaptive difficulty system.
 /// Each category tracks difficulty independently based on player performance.
+@HiveType(typeId: 2)
 enum Difficulty {
+  @HiveField(0)
   easy,
+
+  @HiveField(1)
   medium,
+
+  @HiveField(2)
   hard,
 }
 

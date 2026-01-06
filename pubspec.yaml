@@ -19,6 +19,7 @@ dependencies:
   firebase_vertexai: ^0.1.0
 
   # Local storage
+  hive: ^2.2.3
   hive_flutter: ^1.1.0
   shared_preferences: ^2.2.0
 
