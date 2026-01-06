@@ -1,19 +1,19 @@
 # Femman
 
-A minimalist infinite quiz game inspired by the Swedish card game MIG. Players receive "cards" of 5 questions (one per category), answer them, then draw a new card. AI-generated questions ensure endless fresh content.
+A minimalist infinite quiz game inspired by the Swedish card game MIG. Players receive "cards" of 5 questions (one per category), answer them, then draw a new card. Questions are loaded from JSON files, ensuring offline play and consistent content.
 
 ## Core Concept
 
 - **Format**: 5 questions per card, one from each category
 - **Categories**: Now & Then, Entertainment & Culture, Near & Far, Sport & Misc, Science & Tech
-- **Infinite**: Gemini Developer AI generates questions on-demand with local caching
+- **Offline-first**: Questions loaded from JSON assets with local caching
 - **Bilingual**: Swedish and English support
 - **Adaptive**: Difficulty adjusts based on player performance
 
 ## Tech Stack
 
 - **Framework**: Flutter (targeting Web & Android)
-- **AI**: Firebase Gemini Developer AI for question generation
+- **Questions**: JSON asset files loaded at runtime
 - **Storage**: Local storage (SharedPreferences + Hive for question cache)
 - **State Management**: Riverpod
 - **Fonts**: Google Fonts (Inter)
@@ -208,45 +208,37 @@ class CategoryStats {
 // Otherwise: maintain current difficulty
 //
 // Each category tracks difficulty independently
-// New questions are generated at the player's current difficulty for that category
+// Questions are selected from the JSON pool at the player's current difficulty for that category
 ```
 
-## Question Generation
+## Question Loading
 
-### Gemini Developer AI Prompt Structure
+### JSON Question Format
 
-```
-Generate a {difficulty} {category} trivia question in both Swedish and English.
+Questions are stored in `assets/questions.json` with the following structure:
 
-Requirements:
-- Question should be factually accurate and verifiable
-- 4 answer options, exactly one correct
-- Options should be plausible but clearly distinguishable
-- Include a brief fun fact related to the answer
-- {difficulty}-specific guidelines:
-  - Easy: Common knowledge, well-known facts
-  - Medium: Requires some specific knowledge
-  - Hard: Niche facts, requires expertise or deep interest
-
-Respond in JSON format:
+```json
 {
-  "textSv": "...",
-  "textEn": "...",
-  "optionsSv": ["...", "...", "...", "..."],
-  "optionsEn": ["...", "...", "...", "..."],
-  "correctIndex": 0-3,
-  "funFactSv": "...",
-  "funFactEn": "..."
+  "id": "unique_id",
+  "category": "nowThen|entertainment|nearFar|sportMisc|scienceTech",
+  "difficulty": "easy|medium|hard",
+  "textSv": "Swedish question text",
+  "textEn": "English question text",
+  "optionsSv": ["option1", "option2", "option3", "option4"],
+  "optionsEn": ["option1", "option2", "option3", "option4"],
+  "correctIndex": 0,
+  "funFactSv": "Swedish fun fact (optional)",
+  "funFactEn": "English fun fact (optional)"
 }
 ```
 
-### Caching Strategy
+### Loading Strategy
 
-1. **Seed pool**: Ship with ~100 pre-generated questions (20 per category)
-2. **Background generation**: Generate new questions when pool drops below threshold
-3. **Local cache**: Store generated questions in Hive database
-4. **Cache limits**: Keep max ~500 questions, rotate oldest when limit reached
-5. **Offline play**: Always possible with cached questions
+1. **JSON assets**: Questions loaded from `assets/questions.json` at app startup
+2. **Local cache**: Questions cached in Hive database for quick access
+3. **Cache management**: Questions stored with usage tracking to avoid repetition
+4. **Offline play**: All questions available offline after initial load
+5. **Easy expansion**: Add more questions by editing the JSON file
 
 ## Architecture
 
@@ -302,11 +294,17 @@ lib/
 │   └── difficulty.dart
 │
 ├── services/
-│   ├── question_service.dart       # Orchestrates generation + cache
-│   ├── gemini_ai_service.dart      # AI question generation
+│   ├── question_service.dart       # Orchestrates loading + cache
+│   ├── json_question_loader.dart   # Loads questions from JSON assets
 │   ├── question_cache_service.dart # Hive-based local storage
 │   ├── stats_service.dart          # Player statistics
 │   └── settings_service.dart       # App preferences
+│
+├── data/
+│   └── (removed - questions now in assets/questions.json)
+│
+└── assets/
+    └── questions.json              # Question database
 │
 └── providers/
     ├── quiz_providers.dart
@@ -401,7 +399,7 @@ class AppStrings {
 2. Category breakdown shows which were correct/incorrect
 3. Streak counter updates
 4. Stats updated in background
-5. "Next Card" generates/fetches new card
+5. "Next Card" loads a new card from the question pool
 6. "Home" returns to home screen
 
 ## Dependencies
@@ -415,10 +413,8 @@ dependencies:
   flutter_riverpod: ^2.4.0
   riverpod_annotation: ^2.3.0
   
-  # AI
-  google_generative_ai: ^0.4.0
-  
   # Local storage
+  hive: ^2.2.3
   hive_flutter: ^1.1.0
   shared_preferences: ^2.2.0
   
@@ -429,7 +425,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^6.0.0
   build_runner: ^2.4.0
   riverpod_generator: ^2.3.0
   hive_generator: ^2.0.0
@@ -441,12 +437,12 @@ dev_dependencies:
 
 - minSdkVersion: 21
 - targetSdkVersion: 34
-- Internet permission required
+- No internet permission required (fully offline)
 
 ### Web
 
 - CanvasKit renderer for consistent typography
-- Firebase config in index.html
+- No external dependencies required
 
 ## Testing Strategy
 
