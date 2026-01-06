@@ -415,9 +415,8 @@ dependencies:
   flutter_riverpod: ^2.4.0
   riverpod_annotation: ^2.3.0
   
-  # Firebase & AI
-  firebase_core: ^2.24.0
-  firebase_vertexai: ^0.1.0
+  # AI
+  google_generative_ai: ^0.4.0
   
   # Local storage
   hive_flutter: ^1.1.0
