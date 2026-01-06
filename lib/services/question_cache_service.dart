@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/question.dart';
 import '../models/category.dart';
 import '../models/difficulty.dart';
+import '../data/seed_questions.dart';
 
 /// Service for managing the local question cache using Hive.
 /// Implements caching strategy with usage tracking and automatic rotation.
@@ -36,6 +37,11 @@ class QuestionCacheService {
     // Initialize used questions list if empty
     if (_usedQuestionsBox.isEmpty) {
       await _usedQuestionsBox.put('recent', <String>[]);
+    }
+
+    // Seed initial questions if cache is empty to enable offline play.
+    if (_questionsBox.isEmpty) {
+      await cacheQuestions(seedQuestions);
     }
   }
 
