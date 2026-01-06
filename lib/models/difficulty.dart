@@ -1,1 +1,36 @@
-// Difficulty enum
+import '../core/constants/app_strings.dart';
+
+/// Question difficulty levels for adaptive difficulty system.
+/// Each category tracks difficulty independently based on player performance.
+enum Difficulty {
+  easy,
+  medium,
+  hard,
+}
+
+/// Extension methods for Difficulty enum
+extension DifficultyExtension on Difficulty {
+  /// Get the localized display name for this difficulty level
+  String displayName(AppLanguage lang) {
+    switch (this) {
+      case Difficulty.easy:
+        return AppStrings.difficultyEasy(lang);
+      case Difficulty.medium:
+        return AppStrings.difficultyMedium(lang);
+      case Difficulty.hard:
+        return AppStrings.difficultyHard(lang);
+    }
+  }
+
+  /// Get a numeric value for this difficulty (useful for calculations)
+  int get value {
+    switch (this) {
+      case Difficulty.easy:
+        return 1;
+      case Difficulty.medium:
+        return 2;
+      case Difficulty.hard:
+        return 3;
+    }
+  }
+}
