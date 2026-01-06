@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/question_service.dart';
 import '../services/question_cache_service.dart';
-import '../services/gemini_ai_service.dart';
+import '../services/json_question_loader.dart';
 import '../models/quiz_card.dart';
 import '../models/category.dart';
 import 'stats_providers.dart';
@@ -9,10 +9,10 @@ import 'stats_providers.dart';
 /// Provider for the QuestionService singleton instance
 final questionServiceProvider = Provider<QuestionService>((ref) {
   final cacheService = QuestionCacheService();
-  final aiService = GeminiAIService();
+  final jsonLoader = JsonQuestionLoader();
   final service = QuestionService(
     cacheService: cacheService,
-    aiService: aiService,
+    jsonLoader: jsonLoader,
   );
   ref.onDispose(() => service.dispose());
   return service;
@@ -132,15 +132,6 @@ class QuizNotifier extends StateNotifier<AsyncValue<void>> {
     };
   }
 
-  /// Prefetch questions in the background
-  Future<void> prefetchQuestions() async {
-    try {
-      await _questionService.prefetchQuestions();
-    } catch (error) {
-      // Silent fail for background tasks
-      // In production, log this error
-    }
-  }
 
   /// Warmup cache on app startup
   Future<void> warmupCache() async {

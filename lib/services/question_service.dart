@@ -5,91 +5,55 @@ import '../models/quiz_card.dart';
 import '../models/category.dart';
 import '../models/difficulty.dart';
 import 'question_cache_service.dart';
-import 'gemini_ai_service.dart';
+import 'json_question_loader.dart';
 
-/// Orchestrates question caching and generation.
-/// Prefers cached questions for instant response, generates on-demand when needed.
+/// Orchestrates question loading from JSON and caching.
+/// Loads questions from JSON assets and caches them for quick access.
 class QuestionService {
   final QuestionCacheService _cacheService;
-  final GeminiAIService _aiService;
-
-  bool _mockMode = false;
+  final JsonQuestionLoader _jsonLoader;
 
   // Cache health thresholds
   static const int _minQuestionsPerCategoryDifficulty = 10;
-  static const int _prefetchBatchSize = 5;
-
-  // Track ongoing generation to avoid duplicates
-  final _generationLocks = <String, Future<void>>{};
 
   QuestionService({
     required QuestionCacheService cacheService,
-    required GeminiAIService aiService,
+    required JsonQuestionLoader jsonLoader,
   })  : _cacheService = cacheService,
-        _aiService = aiService;
+        _jsonLoader = jsonLoader;
 
   /// Initialize all sub-services.
-  ///
-  /// If [geminiApiKey] is empty, the service runs in "mock" mode:
-  /// - Only cached / seeded questions are used
-  /// - No calls are made to Gemini Developer API
-  Future<void> init({required String geminiApiKey}) async {
+  /// Loads questions from JSON and caches them.
+  Future<void> init() async {
     await _cacheService.init();
-    if (geminiApiKey.isEmpty) {
-      _mockMode = true;
-      return;
-    }
-    _mockMode = false;
-    await _aiService.init(apiKey: geminiApiKey);
+    
+    // Load questions from JSON and cache them
+    final questions = await _jsonLoader.loadQuestions();
+    await _cacheService.cacheQuestions(questions);
   }
 
   /// Get a quiz card with 5 questions (one per category) at specified difficulties
-  /// Prefers cached questions, generates on-demand if needed
+  /// Uses cached questions from JSON
   Future<QuizCard> getQuizCard(Map<Category, Difficulty> difficulties) async {
     final questions = <Question>[];
     final missingCategories = <Category>[];
 
-    // Try to get questions from cache first
+    // Try to get questions from cache
     for (final category in Category.values) {
       final difficulty = difficulties[category] ?? Difficulty.easy;
       Question? question = _cacheService.getQuestion(category, difficulty);
 
-      // If cache miss, generate on-demand (unless in mock mode)
-      if (question == null && !_mockMode) {
-        try {
-          question = await _generateQuestionOnDemand(category, difficulty);
-        } catch (e) {
-          // If generation fails, try any difficulty for this category
-          for (final fallbackDifficulty in Difficulty.values) {
-            if (fallbackDifficulty != difficulty) {
-              question = _cacheService.getQuestion(category, fallbackDifficulty);
-              if (question != null) break;
-            }
-          }
-          
-          // If still null, add to missing list
-          if (question == null) {
-            missingCategories.add(category);
-            continue;
-          }
-        }
-      }
-
-      // In mock mode, if still null, try any difficulty
-      if (question == null && _mockMode) {
+      // If cache miss for requested difficulty, try any difficulty for this category
+      if (question == null) {
         for (final fallbackDifficulty in Difficulty.values) {
           if (fallbackDifficulty != difficulty) {
             question = _cacheService.getQuestion(category, fallbackDifficulty);
             if (question != null) break;
           }
         }
-        if (question == null) {
-          missingCategories.add(category);
-          continue;
-        }
       }
 
-      // Add question (should be non-null at this point)
+      // Add question if found
       if (question != null) {
         questions.add(question);
       } else {
@@ -109,7 +73,7 @@ class QuestionService {
       buffer.writeln('Total questions in cache: $totalCacheCount');
       
       if (totalCacheCount == 0) {
-        buffer.writeln('Cache is empty. Seed questions may not have loaded properly.');
+        buffer.writeln('Cache is empty. Questions may not have loaded from JSON properly.');
       } else {
         buffer.writeln('Cache breakdown by category/difficulty:');
         for (final category in Category.values) {
@@ -124,10 +88,6 @@ class QuestionService {
         }
       }
       
-      if (_mockMode) {
-        buffer.writeln('Running in mock mode (no AI generation).');
-      }
-      
       throw Exception(buffer.toString());
     }
 
@@ -137,99 +97,7 @@ class QuestionService {
       questions: questions,
     );
 
-    // Trigger background prefetch if cache is getting low
-    _triggerPrefetchIfNeeded();
-
     return quizCard;
-  }
-
-  /// Generate a question on-demand when cache misses
-  Future<Question> _generateQuestionOnDemand(
-    Category category,
-    Difficulty difficulty,
-  ) async {
-    final question = await _aiService.generateQuestion(category, difficulty);
-
-    // Cache the generated question for future use
-    await _cacheService.cacheQuestion(question);
-
-    return question;
-  }
-
-  /// Prefetch questions to fill the cache in the background
-  /// This runs asynchronously and doesn't block the UI
-  Future<void> prefetchQuestions() async {
-    final health = getCacheHealth();
-
-    // Generate questions for categories/difficulties that are low
-    final generationTasks = <Future<void>>[];
-
-    for (final category in Category.values) {
-      for (final difficulty in Difficulty.values) {
-        final key = '${category.name}_${difficulty.name}';
-        final count = health.getCount(category, difficulty);
-
-        if (count < _minQuestionsPerCategoryDifficulty) {
-          // Check if we're already generating for this combination
-          if (_generationLocks.containsKey(key)) {
-            continue;
-          }
-
-          // Start generation task
-          final task = _generateBatch(category, difficulty, key);
-          _generationLocks[key] = task;
-          generationTasks.add(task);
-        }
-      }
-    }
-
-    // Wait for all generation tasks to complete
-    await Future.wait(generationTasks);
-  }
-
-  /// Generate a batch of questions for a specific category/difficulty
-  Future<void> _generateBatch(
-    Category category,
-    Difficulty difficulty,
-    String lockKey,
-  ) async {
-    try {
-      final questions = await _aiService.generateQuestions(
-        category,
-        difficulty,
-        _prefetchBatchSize,
-      );
-
-      if (questions.isNotEmpty) {
-        await _cacheService.cacheQuestions(questions);
-      }
-    } finally {
-      // Always remove the lock when done
-      _generationLocks.remove(lockKey);
-    }
-  }
-
-  /// Trigger background prefetch if cache is below threshold
-  void _triggerPrefetchIfNeeded() {
-    final health = getCacheHealth();
-
-    // Check if any category/difficulty is low
-    bool needsPrefetch = false;
-    for (final category in Category.values) {
-      for (final difficulty in Difficulty.values) {
-        if (health.getCount(category, difficulty) <
-            _minQuestionsPerCategoryDifficulty) {
-          needsPrefetch = true;
-          break;
-        }
-      }
-      if (needsPrefetch) break;
-    }
-
-    if (needsPrefetch) {
-      // Run prefetch in background without awaiting
-      unawaited(prefetchQuestions());
-    }
   }
 
   /// Get cache health statistics
@@ -238,14 +106,10 @@ class QuestionService {
   }
 
   /// Warmup cache on app startup
-  /// Generates initial questions for all category/difficulty combinations
+  /// Ensures questions are loaded from JSON
   Future<void> warmupCache() async {
-    final health = getCacheHealth();
-
-    // Only warmup if cache is empty or very low
-    if (health.totalQuestions < 20) {
-      await prefetchQuestions();
-    }
+    // Questions are already loaded from JSON during init
+    // This method is kept for compatibility but does nothing
   }
 
   /// Check if cache is healthy (has minimum questions for all combinations)
@@ -290,7 +154,7 @@ class QuestionService {
       lowCombinations: lowCount,
       emptyCombinations: emptyCount,
       totalQuestions: health.totalQuestions,
-      isGenerating: _generationLocks.isNotEmpty,
+      isGenerating: false,
     );
   }
 

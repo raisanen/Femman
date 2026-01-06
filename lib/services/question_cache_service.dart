@@ -3,7 +3,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/question.dart';
 import '../models/category.dart';
 import '../models/difficulty.dart';
-import '../data/seed_questions.dart';
 
 /// Service for managing the local question cache using Hive.
 /// Implements caching strategy with usage tracking and automatic rotation.
@@ -85,29 +84,8 @@ class QuestionCacheService {
       await _usedQuestionsBox.put('recent', <String>[]);
     }
 
-    // Seed initial questions if cache is empty to enable offline play.
-    // This includes cases where cache was cleared due to corruption
-    if (_questionsBox.isEmpty || cacheWasCleared) {
-      try {
-        // ignore: avoid_print
-        print('Caching ${seedQuestions.length} seed questions...');
-        await cacheQuestions(seedQuestions);
-        // Verify questions were cached
-        final cachedCount = _questionsBox.length;
-        if (cachedCount == 0) {
-          throw Exception('Failed to cache seed questions: cache is still empty after caching');
-        }
-        // ignore: avoid_print
-        print('Successfully cached $cachedCount seed questions');
-      } catch (e, stackTrace) {
-        // If caching fails, log and rethrow
-        // ignore: avoid_print
-        print('Error caching seed questions: $e');
-        // ignore: avoid_print
-        print('Stack trace: $stackTrace');
-        rethrow;
-      }
-    }
+    // Questions will be loaded from JSON by QuestionService.init()
+    // No need to seed here anymore
   }
 
   /// Cache a single question
