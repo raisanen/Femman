@@ -88,8 +88,8 @@ class Question {
       ),
       textSv: json['textSv'] as String,
       textEn: json['textEn'] as String,
-      optionsSv: (json['optionsSv'] as List<dynamic>).cast<String>(),
-      optionsEn: (json['optionsEn'] as List<dynamic>).cast<String>(),
+      optionsSv: (json['optionsSv'] as List<dynamic>).map((e) => e.toString()).toList(),
+      optionsEn: (json['optionsEn'] as List<dynamic>).map((e) => e.toString()).toList(),
       correctIndex: json['correctIndex'] as int,
       difficulty: Difficulty.values.firstWhere(
         (d) => d.toString() == 'Difficulty.${json['difficulty']}',

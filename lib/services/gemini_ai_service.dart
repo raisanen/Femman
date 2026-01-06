@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:firebase_ai/firebase_ai.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:uuid/uuid.dart';
 import '../models/question.dart';
 import '../models/category.dart';
@@ -17,14 +17,19 @@ class GeminiAIService {
   static const int _maxRetries = 3;
   static const Duration _initialBackoff = Duration(seconds: 1);
 
-  /// Initialize Gemini Developer API via Firebase AI Logic.
+  /// Initialize Gemini Developer API with API key.
   ///
-  /// Firebase must already be initialized with:
-  /// `Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform)`.
-  /// The [apiKey] parameter is ignored but kept for backwards compatibility.
+  /// The [apiKey] should be provided from Firebase config or environment variable.
   Future<void> init({required String apiKey}) async {
-    _model = FirebaseAI.googleAI().generativeModel(
-      model: 'gemini-2.5-flash',
+    _model = GenerativeModel(
+      model: 'gemini-1.5-flash',
+      apiKey: apiKey,
+      generationConfig: GenerationConfig(
+        temperature: 1.0,
+        topP: 0.95,
+        maxOutputTokens: 1024,
+        responseMimeType: 'application/json',
+      ),
     );
   }
 

@@ -8,7 +8,7 @@ class SettingsService {
   static const _keyLanguage = 'language';
   static const _keyHasCompletedOnboarding = 'hasCompletedOnboarding';
 
-  late final SharedPreferences _prefs;
+  SharedPreferences? _prefs;
 
   // Stream controller for language changes
   final _languageController = StreamController<AppLanguage>.broadcast();
@@ -23,8 +23,13 @@ class SettingsService {
 
   /// Get the current language preference
   /// Defaults to Swedish if not set
+  /// Returns default if service hasn't been initialized yet
   AppLanguage getLanguage() {
-    final languageString = _prefs.getString(_keyLanguage);
+    if (_prefs == null) {
+      return AppLanguage.sv; // Default if not initialized
+    }
+
+    final languageString = _prefs!.getString(_keyLanguage);
     if (languageString == null) {
       return AppLanguage.sv; // Default to Swedish
     }
@@ -41,24 +46,32 @@ class SettingsService {
   /// Set the language preference
   /// Notifies listeners via stream
   Future<void> setLanguage(AppLanguage language) async {
+    if (_prefs == null) {
+      // Service not initialized, just update stream
+      _languageController.add(language);
+      return;
+    }
     final languageString = language.toString().split('.').last;
-    await _prefs.setString(_keyLanguage, languageString);
+    await _prefs!.setString(_keyLanguage, languageString);
     _languageController.add(language);
   }
 
   /// Get onboarding completion status
   bool hasCompletedOnboarding() {
-    return _prefs.getBool(_keyHasCompletedOnboarding) ?? false;
+    if (_prefs == null) return false;
+    return _prefs!.getBool(_keyHasCompletedOnboarding) ?? false;
   }
 
   /// Set onboarding completion status
   Future<void> setHasCompletedOnboarding(bool completed) async {
-    await _prefs.setBool(_keyHasCompletedOnboarding, completed);
+    if (_prefs == null) return;
+    await _prefs!.setBool(_keyHasCompletedOnboarding, completed);
   }
 
   /// Clear all settings (useful for testing or reset functionality)
   Future<void> clearAll() async {
-    await _prefs.clear();
+    if (_prefs == null) return;
+    await _prefs!.clear();
     _languageController.add(AppLanguage.sv); // Reset to default
   }
 

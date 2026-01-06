@@ -30,9 +30,55 @@ class QuestionCacheService {
       Hive.registerAdapter(DifficultyAdapter());
     }
 
-    // Open boxes
-    _questionsBox = await Hive.openBox<Question>(_questionsBoxName);
-    _usedQuestionsBox = await Hive.openBox<List<String>>(_usedQuestionsBoxName);
+    // Open boxes with error handling for corrupted cache
+    bool cacheWasCleared = false;
+    try {
+      _questionsBox = await Hive.openBox<Question>(_questionsBoxName);
+      _usedQuestionsBox = await Hive.openBox<List<String>>(_usedQuestionsBoxName);
+      
+      // Try to read a question to verify the cache is readable
+      // This will catch type errors early
+      if (_questionsBox.isNotEmpty) {
+        try {
+          // Try to read all questions to check for type errors
+          final testQuestions = <Question>[];
+          for (final q in _questionsBox.values) {
+            try {
+              // Access properties to trigger deserialization
+              final _ = q.id;
+              final __ = q.category;
+              testQuestions.add(q);
+            } catch (e) {
+              // Question is corrupted, skip it
+            }
+          }
+          
+          // If we couldn't read any questions, clear the cache
+          if (testQuestions.isEmpty && _questionsBox.isNotEmpty) {
+            await _questionsBox.clear();
+            await _usedQuestionsBox.clear();
+            cacheWasCleared = true;
+          }
+        } catch (e) {
+          // Cache is corrupted, clear it
+          await _questionsBox.clear();
+          await _usedQuestionsBox.clear();
+          cacheWasCleared = true;
+        }
+      }
+    } catch (e) {
+      // If there's a type error opening the box, clear and recreate
+      // This can happen when the adapter format changes
+      try {
+        await Hive.deleteBoxFromDisk(_questionsBoxName);
+        await Hive.deleteBoxFromDisk(_usedQuestionsBoxName);
+      } catch (_) {
+        // Ignore deletion errors
+      }
+      _questionsBox = await Hive.openBox<Question>(_questionsBoxName);
+      _usedQuestionsBox = await Hive.openBox<List<String>>(_usedQuestionsBoxName);
+      cacheWasCleared = true;
+    }
 
     // Initialize used questions list if empty
     if (_usedQuestionsBox.isEmpty) {
@@ -40,8 +86,27 @@ class QuestionCacheService {
     }
 
     // Seed initial questions if cache is empty to enable offline play.
-    if (_questionsBox.isEmpty) {
-      await cacheQuestions(seedQuestions);
+    // This includes cases where cache was cleared due to corruption
+    if (_questionsBox.isEmpty || cacheWasCleared) {
+      try {
+        // ignore: avoid_print
+        print('Caching ${seedQuestions.length} seed questions...');
+        await cacheQuestions(seedQuestions);
+        // Verify questions were cached
+        final cachedCount = _questionsBox.length;
+        if (cachedCount == 0) {
+          throw Exception('Failed to cache seed questions: cache is still empty after caching');
+        }
+        // ignore: avoid_print
+        print('Successfully cached $cachedCount seed questions');
+      } catch (e, stackTrace) {
+        // If caching fails, log and rethrow
+        // ignore: avoid_print
+        print('Error caching seed questions: $e');
+        // ignore: avoid_print
+        print('Stack trace: $stackTrace');
+        rethrow;
+      }
     }
   }
 
@@ -62,33 +127,56 @@ class QuestionCacheService {
   /// Returns null if no suitable question is found
   /// Avoids recently used questions
   Question? getQuestion(Category category, Difficulty difficulty) {
-    final recentlyUsed = _getRecentlyUsedIds();
+    try {
+      final recentlyUsed = _getRecentlyUsedIds();
 
-    // Find all questions matching category and difficulty
-    final candidates = _questionsBox.values.where((q) {
-      return q.category == category &&
-          q.difficulty == difficulty &&
-          !recentlyUsed.contains(q.id);
-    }).toList();
+      // Find all questions matching category and difficulty
+      // Wrap in try-catch to handle type errors from corrupted cache
+      final candidates = <Question>[];
+      for (final q in _questionsBox.values) {
+        try {
+          if (q.category == category &&
+              q.difficulty == difficulty &&
+              !recentlyUsed.contains(q.id)) {
+            candidates.add(q);
+          }
+        } catch (e) {
+          // Skip corrupted questions
+          continue;
+        }
+      }
 
-    if (candidates.isEmpty) {
-      // If no unused questions, try getting any question for this category/difficulty
-      final allCandidates = _questionsBox.values.where((q) {
-        return q.category == category && q.difficulty == difficulty;
-      }).toList();
+      if (candidates.isEmpty) {
+        // If no unused questions, try getting any question for this category/difficulty
+        final allCandidates = <Question>[];
+        for (final q in _questionsBox.values) {
+          try {
+            if (q.category == category && q.difficulty == difficulty) {
+              allCandidates.add(q);
+            }
+          } catch (e) {
+            // Skip corrupted questions
+            continue;
+          }
+        }
 
-      if (allCandidates.isEmpty) return null;
+        if (allCandidates.isEmpty) return null;
 
-      // Return random from all candidates
-      final question = allCandidates[_random.nextInt(allCandidates.length)];
+        // Return random from all candidates
+        final question = allCandidates[_random.nextInt(allCandidates.length)];
+        _markAsUsed(question.id);
+        return question;
+      }
+
+      // Return random from unused candidates
+      final question = candidates[_random.nextInt(candidates.length)];
       _markAsUsed(question.id);
       return question;
+    } catch (e) {
+      // If there's a type error, the cache might be corrupted
+      // Return null and let the service handle it
+      return null;
     }
-
-    // Return random from unused candidates
-    final question = candidates[_random.nextInt(candidates.length)];
-    _markAsUsed(question.id);
-    return question;
   }
 
 
@@ -142,7 +230,54 @@ class QuestionCacheService {
   /// Get list of recently used question IDs
   List<String> _getRecentlyUsedIds() {
     final recent = _usedQuestionsBox.get('recent');
-    return recent ?? <String>[];
+    if (recent == null) return <String>[];
+    // Handle web platform where Hive returns List<dynamic>
+    if (recent is List<dynamic>) {
+      return recent.map((e) => e.toString()).toList();
+    }
+    return recent as List<String>;
+  }
+
+  /// Get count of valid questions in cache by category and difficulty
+  Map<Category, Map<Difficulty, int>> getQuestionCounts() {
+    final counts = <Category, Map<Difficulty, int>>{};
+    
+    for (final category in Category.values) {
+      counts[category] = <Difficulty, int>{};
+      for (final difficulty in Difficulty.values) {
+        counts[category]![difficulty] = 0;
+      }
+    }
+    
+    for (final q in _questionsBox.values) {
+      try {
+        final category = q.category;
+        final difficulty = q.difficulty;
+        counts[category]![difficulty] = (counts[category]![difficulty] ?? 0) + 1;
+      } catch (e) {
+        // Skip corrupted questions
+        continue;
+      }
+    }
+    
+    return counts;
+  }
+
+  /// Get total count of valid questions in cache
+  int getTotalQuestionCount() {
+    int count = 0;
+    for (final q in _questionsBox.values) {
+      try {
+        // Access properties to verify question is valid
+        final _ = q.id;
+        final __ = q.category;
+        count++;
+      } catch (e) {
+        // Skip corrupted questions
+        continue;
+      }
+    }
+    return count;
   }
 
   /// Mark a question as used

@@ -6,6 +6,7 @@ import 'package:femman/core/constants/app_spacing.dart';
 import 'package:femman/core/constants/app_strings.dart';
 import 'package:femman/core/theme/app_colors.dart';
 import 'package:femman/core/theme/app_theme.dart';
+import 'package:femman/core/theme/app_typography.dart';
 import 'package:femman/firebase_options.dart';
 import 'package:femman/features/home/home_screen.dart';
 import 'package:femman/features/quiz/quiz_screen.dart';
@@ -75,9 +76,15 @@ class _FemmanAppState extends ConsumerState<FemmanApp> {
     // Initialize question service (Hive cache + Gemini or mock mode)
     final questionService = ref.read(questionServiceProvider);
     // Use Firebase API key for Gemini by default so no extra env var is needed.
-    final firebaseApiKey = DefaultFirebaseOptions.currentPlatform.apiKey;
+    // Handle case where API key might be invalid/placeholder
+    final firebaseOptions = DefaultFirebaseOptions.currentPlatform;
+    final firebaseApiKey = firebaseOptions.apiKey;
+    // Check if API key is valid (not placeholder)
+    final isValidApiKey = firebaseApiKey != null &&
+        firebaseApiKey.isNotEmpty &&
+        !firebaseApiKey.startsWith('YOUR_');
     await questionService.init(
-      geminiApiKey: mockMode ? '' : firebaseApiKey,
+      geminiApiKey: (mockMode || !isValidApiKey) ? '' : firebaseApiKey,
     );
 
     // Optionally warm up cache on startup (no-op if cache is already healthy / mock with no AI)
@@ -116,9 +123,8 @@ class _FemmanAppState extends ConsumerState<FemmanApp> {
           theme: AppTheme.lightTheme.copyWith(
             scaffoldBackgroundColor: AppColors.background,
           ),
-          initialRoute: '/',
+          home: const HomeScreen(),
           routes: {
-            '/': (_) => const HomeScreen(),
             '/quiz': (_) => const QuizScreen(),
             '/stats': (_) => const StatsScreen(),
             '/settings': (_) => const SettingsScreen(),

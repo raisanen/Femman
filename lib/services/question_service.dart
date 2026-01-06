@@ -47,6 +47,7 @@ class QuestionService {
   /// Prefers cached questions, generates on-demand if needed
   Future<QuizCard> getQuizCard(Map<Category, Difficulty> difficulties) async {
     final questions = <Question>[];
+    final missingCategories = <Category>[];
 
     // Try to get questions from cache first
     for (final category in Category.values) {
@@ -55,17 +56,79 @@ class QuestionService {
 
       // If cache miss, generate on-demand (unless in mock mode)
       if (question == null && !_mockMode) {
-        question = await _generateQuestionOnDemand(category, difficulty);
+        try {
+          question = await _generateQuestionOnDemand(category, difficulty);
+        } catch (e) {
+          // If generation fails, try any difficulty for this category
+          for (final fallbackDifficulty in Difficulty.values) {
+            if (fallbackDifficulty != difficulty) {
+              question = _cacheService.getQuestion(category, fallbackDifficulty);
+              if (question != null) break;
+            }
+          }
+          
+          // If still null, add to missing list
+          if (question == null) {
+            missingCategories.add(category);
+            continue;
+          }
+        }
       }
 
-      // In mock mode, if still null, throw a clear error
+      // In mock mode, if still null, try any difficulty
       if (question == null && _mockMode) {
-        throw Exception(
-          'No cached questions available for $category at $difficulty in mock mode.',
-        );
+        for (final fallbackDifficulty in Difficulty.values) {
+          if (fallbackDifficulty != difficulty) {
+            question = _cacheService.getQuestion(category, fallbackDifficulty);
+            if (question != null) break;
+          }
+        }
+        if (question == null) {
+          missingCategories.add(category);
+          continue;
+        }
       }
 
-      questions.add(question);
+      // Add question (should be non-null at this point)
+      if (question != null) {
+        questions.add(question);
+      } else {
+        missingCategories.add(category);
+      }
+    }
+
+    // If we don't have 5 questions, throw a clear error with diagnostics
+    if (questions.length != 5) {
+      final cacheCounts = _cacheService.getQuestionCounts();
+      final totalCacheCount = _cacheService.getTotalQuestionCount();
+      
+      // Build a detailed error message
+      final buffer = StringBuffer();
+      buffer.writeln('Failed to load quiz card: Only found ${questions.length}/5 questions.');
+      buffer.writeln('Missing categories: ${missingCategories.map((c) => c.toString().split('.').last).join(', ')}.');
+      buffer.writeln('Total questions in cache: $totalCacheCount');
+      
+      if (totalCacheCount == 0) {
+        buffer.writeln('Cache is empty. Seed questions may not have loaded properly.');
+      } else {
+        buffer.writeln('Cache breakdown by category/difficulty:');
+        for (final category in Category.values) {
+          final catName = category.toString().split('.').last;
+          final counts = cacheCounts[category] ?? {};
+          final catTotal = counts.values.fold(0, (a, b) => a + b);
+          if (catTotal > 0) {
+            buffer.writeln('  $catName: ${counts.entries.map((e) => '${e.key.toString().split('.').last}=${e.value}').join(', ')}');
+          } else {
+            buffer.writeln('  $catName: none');
+          }
+        }
+      }
+      
+      if (_mockMode) {
+        buffer.writeln('Running in mock mode (no AI generation).');
+      }
+      
+      throw Exception(buffer.toString());
     }
 
     // Create quiz card

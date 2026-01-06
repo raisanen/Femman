@@ -112,11 +112,23 @@ class QuizController extends StateNotifier<QuizState> {
       final quizNotifier = _ref.read(quizNotifierProvider.notifier);
       await quizNotifier.loadNewCard();
 
+      // Check if there was an error in the async operation
+      final asyncValue = _ref.read(quizNotifierProvider);
+      if (asyncValue.hasError) {
+        state = state.copyWithError(
+          'Failed to load quiz card: ${asyncValue.error}',
+        );
+        return;
+      }
+
       // Get the loaded card from provider
       final card = _ref.read(currentCardProvider);
 
       if (card == null) {
-        state = state.copyWithError('Failed to load quiz card');
+        state = state.copyWithError(
+          'Failed to load quiz card: No card was created. '
+          'This might mean the question cache is empty or question generation failed.',
+        );
         return;
       }
 
@@ -128,8 +140,13 @@ class QuizController extends StateNotifier<QuizState> {
         timeStarted: DateTime.now(),
         isLoading: false,
       );
-    } catch (error) {
-      state = state.copyWithError('Error loading card: $error');
+    } catch (error, stackTrace) {
+      state = state.copyWithError(
+        'Error loading card: $error',
+      );
+      // In debug mode, you might want to print stackTrace
+      // ignore: avoid_print
+      print('Quiz card loading error: $error\n$stackTrace');
     }
   }
 

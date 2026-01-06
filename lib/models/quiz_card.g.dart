@@ -18,7 +18,7 @@ class QuizCardAdapter extends TypeAdapter<QuizCard> {
     };
     return QuizCard(
       id: fields[0] as String,
-      questions: (fields[1] as List).cast<Question>(),
+      questions: (fields[1] as List<dynamic>).map((e) => e as Question).toList(),
       createdAt: fields[2] as DateTime,
     );
   }

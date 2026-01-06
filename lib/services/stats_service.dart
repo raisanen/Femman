@@ -22,17 +22,25 @@ class StatsService {
   /// Initialize Hive boxes and load current stats
   Future<void> init() async {
     // Register Hive adapters if not already registered
-    if (!Hive.isAdapterRegistered(7)) {
-      Hive.registerAdapter(PlayerStatsAdapter());
+    // Note: Category (1) and Difficulty (2) should be registered in QuestionCacheService
+    // but we register them here too to be safe
+    if (!Hive.isAdapterRegistered(1)) {
+      Hive.registerAdapter(CategoryAdapter());
     }
-    if (!Hive.isAdapterRegistered(6)) {
-      Hive.registerAdapter(GameSessionAdapter());
+    if (!Hive.isAdapterRegistered(2)) {
+      Hive.registerAdapter(DifficultyAdapter());
+    }
+    if (!Hive.isAdapterRegistered(4)) {
+      Hive.registerAdapter(CardResultAdapter());
     }
     if (!Hive.isAdapterRegistered(5)) {
       Hive.registerAdapter(CategoryStatsAdapter());
     }
-    if (!Hive.isAdapterRegistered(4)) {
-      Hive.registerAdapter(CardResultAdapter());
+    if (!Hive.isAdapterRegistered(6)) {
+      Hive.registerAdapter(GameSessionAdapter());
+    }
+    if (!Hive.isAdapterRegistered(7)) {
+      Hive.registerAdapter(PlayerStatsAdapter());
     }
 
     // Open boxes
