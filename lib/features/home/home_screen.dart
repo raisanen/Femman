@@ -4,9 +4,6 @@ import 'package:femman/core/constants/app_spacing.dart';
 import 'package:femman/core/constants/app_strings.dart';
 import 'package:femman/core/theme/app_colors.dart';
 import 'package:femman/core/theme/app_typography.dart';
-import 'package:femman/features/quiz/quiz_screen.dart';
-import 'package:femman/features/settings/settings_screen.dart';
-import 'package:femman/features/stats/stats_screen.dart';
 import 'package:femman/providers/settings_providers.dart';
 
 /// Minimal Swiss-typography-inspired home screen.
@@ -57,11 +54,7 @@ class HomeScreen extends ConsumerWidget {
                       elevation: 0,
                     ),
                     onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const QuizScreen(),
-                        ),
-                      );
+                      Navigator.of(context).pushNamed('/quiz');
                     },
                     child: Text(
                       AppStrings.playButton(language),
@@ -88,11 +81,7 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                     onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const StatsScreen(),
-                        ),
-                      );
+                      Navigator.of(context).pushNamed('/stats');
                     },
                     child: Text(
                       AppStrings.statsButton(language),
@@ -115,11 +104,7 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     tooltip: AppStrings.settingsButton(language),
                     onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const SettingsScreen(),
-                        ),
-                      );
+                      Navigator.of(context).pushNamed('/settings');
                     },
                   ),
                 ),

@@ -9,8 +9,6 @@ import 'package:femman/core/theme/app_typography.dart';
 import 'package:femman/features/quiz/quiz_controller.dart';
 import 'package:femman/features/quiz/widgets/question_view.dart';
 import 'package:femman/features/quiz/widgets/progress_dots.dart';
-import 'package:femman/features/results/results_screen.dart';
-import 'package:femman/models/card_result.dart';
 import 'package:femman/providers/settings_providers.dart';
 
 /// Main game screen showing a 5-question quiz card.
@@ -260,10 +258,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       _showResult = false;
     });
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => ResultsScreen(result: result as CardResult),
-      ),
+    Navigator.of(context).pushReplacementNamed(
+      '/results',
+      arguments: result,
     );
   }
 }

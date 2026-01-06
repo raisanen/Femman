@@ -4,8 +4,6 @@ import 'package:femman/core/constants/app_spacing.dart';
 import 'package:femman/core/constants/app_strings.dart';
 import 'package:femman/core/theme/app_colors.dart';
 import 'package:femman/core/theme/app_typography.dart';
-import 'package:femman/features/home/home_screen.dart';
-import 'package:femman/features/quiz/quiz_screen.dart';
 import 'package:femman/features/results/widgets/category_breakdown.dart';
 import 'package:femman/models/card_result.dart';
 import 'package:femman/providers/settings_providers.dart';
@@ -157,24 +155,17 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               // Actions at bottom
               ElevatedButton(
                 onPressed: () {
-                  // Start a new card by going back into QuizScreen
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(
-                      builder: (_) => const QuizScreen(),
-                    ),
-                    (route) => false,
-                  );
+                  // Start a new card by replacing with a fresh QuizScreen
+                  Navigator.of(context).pushReplacementNamed('/quiz');
                 },
                 child: Text(AppStrings.nextCardButton(language)),
               ),
               const SizedBox(height: AppSpacing.sm),
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(
-                      builder: (_) => const HomeScreen(),
-                    ),
-                    (route) => false,
+                  // Pop back to home
+                  Navigator.of(context).popUntil(
+                    (route) => route.settings.name == '/' || route.isFirst,
                   );
                 },
                 child: Text(AppStrings.homeButton(language)),

@@ -7,6 +7,11 @@ import 'package:femman/core/constants/app_strings.dart';
 import 'package:femman/core/theme/app_colors.dart';
 import 'package:femman/core/theme/app_theme.dart';
 import 'package:femman/features/home/home_screen.dart';
+import 'package:femman/features/quiz/quiz_screen.dart';
+import 'package:femman/features/results/results_screen.dart';
+import 'package:femman/features/settings/settings_screen.dart';
+import 'package:femman/features/stats/stats_screen.dart';
+import 'package:femman/models/card_result.dart';
 import 'package:femman/providers/quiz_providers.dart';
 import 'package:femman/providers/settings_providers.dart';
 import 'package:femman/providers/stats_providers.dart';
@@ -101,10 +106,24 @@ class _FemmanAppState extends ConsumerState<FemmanApp> {
           theme: AppTheme.lightTheme.copyWith(
             scaffoldBackgroundColor: AppColors.background,
           ),
-          home: const HomeScreen(),
+          initialRoute: '/',
           routes: {
-            // Home is the default route
-            '/home': (_) => const HomeScreen(),
+            '/': (_) => const HomeScreen(),
+            '/quiz': (_) => const QuizScreen(),
+            '/stats': (_) => const StatsScreen(),
+            '/settings': (_) => const SettingsScreen(),
+          },
+          onGenerateRoute: (settings) {
+            if (settings.name == '/results') {
+              final args = settings.arguments;
+              if (args is CardResult) {
+                return MaterialPageRoute(
+                  builder: (_) => ResultsScreen(result: args),
+                  settings: settings,
+                );
+              }
+            }
+            return null;
           },
         );
       },
