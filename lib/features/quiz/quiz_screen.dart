@@ -232,7 +232,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     });
   }
 
-  void _advanceOrFinish() async {
+  void _advanceOrFinish() {
     final controller = ref.read(quizControllerProvider.notifier);
 
     _resultTimer?.cancel();
@@ -246,7 +246,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       return;
     }
 
-    // Final question: build result and submit card
+    // Final question: build result and navigate to results
     final result = controller.getCardResult();
     if (result == null) {
       // Fallback: just reset UI
@@ -255,10 +255,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       });
       return;
     }
-
-    await controller.submitCard();
-
-    if (!mounted) return;
 
     setState(() {
       _showResult = false;
