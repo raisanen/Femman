@@ -74,8 +74,11 @@ class _FemmanAppState extends ConsumerState<FemmanApp> {
 
     // Initialize question service (Hive cache + Gemini or mock mode)
     final questionService = ref.read(questionServiceProvider);
-    const apiKey = String.fromEnvironment('GEMINI_API_KEY');
-    await questionService.init(geminiApiKey: mockMode ? '' : apiKey);
+    // Use Firebase API key for Gemini by default so no extra env var is needed.
+    final firebaseApiKey = DefaultFirebaseOptions.currentPlatform.apiKey;
+    await questionService.init(
+      geminiApiKey: mockMode ? '' : firebaseApiKey,
+    );
 
     // Optionally warm up cache on startup (no-op if cache is already healthy / mock with no AI)
     await ref.read(quizNotifierProvider.notifier).warmupCache();

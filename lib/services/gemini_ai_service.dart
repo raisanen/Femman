@@ -1,31 +1,30 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:firebase_ai/firebase_ai.dart';
 import 'package:uuid/uuid.dart';
 import '../models/question.dart';
 import '../models/category.dart';
 import '../models/difficulty.dart';
 import '../core/constants/app_strings.dart';
 
-/// Service for generating quiz questions using Gemini Developer API.
+/// Service for generating quiz questions using Firebase AI Logic (Gemini).
 /// Handles bilingual question generation with proper error handling and retries.
+///
+/// This follows the Firebase AI Logic Dart pattern:
+/// https://firebase.google.com/docs/ai-logic/get-started?platform=android&api=dev#initialize-service-and-model-dart
 class GeminiAIService {
   late final GenerativeModel _model;
   static const int _maxRetries = 3;
   static const Duration _initialBackoff = Duration(seconds: 1);
 
-  /// Initialize Gemini Developer API with API key
-  /// API key should be provided via environment variable or secure storage
+  /// Initialize Gemini Developer API via Firebase AI Logic.
+  ///
+  /// Firebase must already be initialized with:
+  /// `Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform)`.
+  /// The [apiKey] parameter is ignored but kept for backwards compatibility.
   Future<void> init({required String apiKey}) async {
-    _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
-      apiKey: apiKey,
-      generationConfig: GenerationConfig(
-        temperature: 1.0,
-        topP: 0.95,
-        maxOutputTokens: 1024,
-        responseMimeType: 'application/json',
-      ),
+    _model = FirebaseAI.googleAI().generativeModel(
+      model: 'gemini-2.5-flash',
     );
   }
 

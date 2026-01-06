@@ -25,22 +25,23 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // TODO: Replace these placeholder configs with real values from Firebase.
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR_WEB_API_KEY',
-    authDomain: 'YOUR_PROJECT.firebaseapp.com',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_PROJECT.appspot.com',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    appId: 'YOUR_WEB_APP_ID',
+    apiKey: 'AIzaSyCcw2zHj-VFZ8w9j3NDsOxBLYIQJgYxAd4',
+    appId: '1:458645609132:web:b3f12e575f9eed3861dd09',
+    messagingSenderId: '458645609132',
+    projectId: 'femman-135c4',
+    authDomain: 'femman-135c4.firebaseapp.com',
+    storageBucket: 'femman-135c4.firebasestorage.app',
   );
 
+  // TODO: Replace these placeholder configs with real values from Firebase.
+
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_ANDROID_API_KEY',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_PROJECT.appspot.com',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    appId: 'YOUR_ANDROID_APP_ID',
+    apiKey: 'AIzaSyB4dV3hFZJg6vKF6WQZg1clOhZkmwMt_uQ',
+    appId: '1:458645609132:android:f8546142214f626e61dd09',
+    messagingSenderId: '458645609132',
+    projectId: 'femman-135c4',
+    storageBucket: 'femman-135c4.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -60,5 +61,3 @@ class DefaultFirebaseOptions {
     appId: 'YOUR_DESKTOP_APP_ID',
   );
 }
-
-
