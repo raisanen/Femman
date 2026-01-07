@@ -1,20 +1,20 @@
 # Femman
 
-A minimalist infinite quiz game inspired by the Swedish card game MIG. Players receive "cards" of 5 questions (one per category), answer them, then draw a new card. Questions are loaded from JSON files, ensuring offline play and consistent content.
+A minimalist infinite quiz game inspired by the Swedish card game MIG. Players receive "cards" of 5 questions (one per category), answer them, then draw a new card. Questions are loaded from a GitHub repository at startup, with fallback to local JSON assets for offline play.
 
 ## Core Concept
 
 - **Format**: 5 questions per card, one from each category
 - **Categories**: Now & Then, Entertainment & Culture, Near & Far, Sport & Misc, Science & Tech
-- **Offline-first**: Questions loaded from JSON assets with local caching
+- **Question Loading**: Questions loaded from GitHub repository at startup, with fallback to local JSON assets for offline play
 - **Bilingual**: Swedish and English support
 - **Adaptive**: Difficulty adjusts based on player performance
 
 ## Tech Stack
 
 - **Framework**: Flutter (targeting Web & Android)
-- **Questions**: JSON asset files loaded at runtime
-- **Storage**: Local storage (SharedPreferences + Hive for question cache)
+- **Questions**: Loaded from GitHub repository (https://github.com/raisanen/femman_questions) with fallback to JSON assets
+- **Storage**: Local storage (SharedPreferences + Hive for stats)
 - **State Management**: Riverpod
 - **Fonts**: Google Fonts (Inter)
 
@@ -213,32 +213,53 @@ class CategoryStats {
 
 ## Question Loading
 
+### GitHub Repository
+
+Questions are hosted in a GitHub repository: `https://github.com/raisanen/femman_questions`
+
+The repository contains:
+- `manifest.json`: Lists all available question JSON files
+- Multiple question JSON files: Can be split across multiple files for organization
+
+### Manifest Format
+
+The `manifest.json` file can be structured in multiple ways:
+- `{ "files": ["file1.json", "file2.json", ...] }`
+- `{ "questions": ["file1.json", "file2.json", ...] }`
+- `["file1.json", "file2.json", ...]` (direct array)
+
 ### JSON Question Format
 
-Questions are stored in `assets/questions.json` with the following structure:
+Each question JSON file contains an array of question objects:
 
 ```json
-{
-  "id": "unique_id",
-  "category": "nowThen|entertainment|nearFar|sportMisc|scienceTech",
-  "difficulty": "easy|medium|hard",
-  "textSv": "Swedish question text",
-  "textEn": "English question text",
-  "optionsSv": ["option1", "option2", "option3", "option4"],
-  "optionsEn": ["option1", "option2", "option3", "option4"],
-  "correctIndex": 0,
-  "funFactSv": "Swedish fun fact (optional)",
-  "funFactEn": "English fun fact (optional)"
-}
+[
+  {
+    "id": "unique_id",
+    "category": "nowThen|entertainment|nearFar|sportMisc|scienceTech",
+    "difficulty": "easy|medium|hard",
+    "textSv": "Swedish question text",
+    "textEn": "English question text",
+    "optionsSv": ["option1", "option2", "option3", "option4"],
+    "optionsEn": ["option1", "option2", "option3", "option4"],
+    "correctIndex": 0,
+    "funFactSv": "Swedish fun fact (optional)",
+    "funFactEn": "English fun fact (optional)"
+  }
+]
 ```
 
 ### Loading Strategy
 
-1. **JSON assets**: Questions loaded from `assets/questions.json` at app startup
-2. **Local cache**: Questions cached in Hive database for quick access
-3. **Cache management**: Questions stored with usage tracking to avoid repetition
-4. **Offline play**: All questions available offline after initial load
-5. **Easy expansion**: Add more questions by editing the JSON file
+1. **GitHub loading (primary)**: On app startup, attempts to load questions from GitHub repository
+   - Fetches `manifest.json` to discover available question files
+   - Downloads and merges all question files listed in the manifest
+   - Prevents duplicate questions by checking question IDs
+2. **Asset fallback**: If GitHub loading fails (offline, network issues, etc.), falls back to `assets/questions.json`
+3. **In-memory storage**: All questions kept in memory for fast access during gameplay
+4. **Usage tracking**: Tracks recently used questions to avoid immediate repetition
+5. **Manual reload**: Settings screen provides option to reload questions from GitHub
+6. **Offline play**: App works fully offline using asset fallback or previously loaded questions
 
 ## Architecture
 
@@ -294,9 +315,9 @@ lib/
 │   └── difficulty.dart
 │
 ├── services/
-│   ├── question_service.dart       # Orchestrates loading + cache
-│   ├── json_question_loader.dart   # Loads questions from JSON assets
-│   ├── question_cache_service.dart # Hive-based local storage
+│   ├── question_service.dart       # Orchestrates loading from GitHub/assets
+│   ├── github_question_loader.dart # Loads questions from GitHub repository
+│   ├── json_question_loader.dart   # Loads questions from JSON assets (fallback)
 │   ├── stats_service.dart          # Player statistics
 │   └── settings_service.dart       # App preferences
 │
@@ -349,6 +370,8 @@ lib/
                          │             │
                          │  Language   │
                          │  [SV] [EN]  │
+                         │  Reload Q's │
+                         │  Theme      │
                          └─────────────┘
 ```
 
@@ -421,6 +444,7 @@ dependencies:
   # Utilities
   uuid: ^4.2.0
   google_fonts: ^6.1.0
+  http: ^1.1.0
   
 dev_dependencies:
   flutter_test:
@@ -437,7 +461,7 @@ dev_dependencies:
 
 - minSdkVersion: 21
 - targetSdkVersion: 34
-- No internet permission required (fully offline)
+- Internet permission required for GitHub question loading (falls back to assets if unavailable)
 
 ### Web
 
