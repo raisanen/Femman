@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/settings_service.dart';
 import '../core/constants/app_strings.dart';
@@ -57,3 +58,28 @@ final setOnboardingCompletedProvider =
     ref.invalidate(hasCompletedOnboardingProvider);
   };
 });
+
+/// Provider for the current theme mode
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>(
+  (ref) => ThemeModeNotifier(ref.watch(settingsServiceProvider)),
+);
+
+/// Notifier for managing theme mode state
+class ThemeModeNotifier extends StateNotifier<ThemeMode> {
+  final SettingsService _settingsService;
+
+  ThemeModeNotifier(this._settingsService)
+      : super(_settingsService.getThemeMode());
+
+  /// Change the theme mode
+  Future<void> setThemeMode(ThemeMode mode) async {
+    await _settingsService.setThemeMode(mode);
+    state = mode;
+  }
+
+  /// Toggle between dark and light theme
+  Future<void> toggleTheme() async {
+    final newMode = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    await setThemeMode(newMode);
+  }
+}

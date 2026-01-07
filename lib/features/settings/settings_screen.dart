@@ -6,6 +6,7 @@ import 'package:femman/core/theme/app_colors.dart';
 import 'package:femman/core/theme/app_typography.dart';
 import 'package:femman/providers/settings_providers.dart';
 import 'package:femman/providers/stats_providers.dart';
+import 'package:femman/providers/quiz_providers.dart';
 
 /// Minimal settings screen.
 ///
@@ -71,6 +72,43 @@ class SettingsScreen extends ConsumerWidget {
                     },
                   ),
                 ],
+              ),
+
+              const SizedBox(height: AppSpacing.xl),
+
+              // Reload questions from GitHub
+              ElevatedButton(
+                onPressed: () => _reloadQuestions(context, ref, language),
+                child: Text(
+                  language == AppLanguage.sv ? 'Ladda om frågor från GitHub' : 'Reload questions from GitHub',
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.md),
+
+              // Theme toggle
+              ElevatedButton(
+                onPressed: () {
+                  ref.read(themeModeProvider.notifier).toggleTheme();
+                },
+                child: Builder(
+                  builder: (context) {
+                    final currentThemeMode = ref.watch(themeModeProvider);
+                    final isDark = currentThemeMode == ThemeMode.dark;
+                    final themeText = language == AppLanguage.sv
+                        ? (isDark ? 'Växla till ljust tema' : 'Växla till mörkt tema')
+                        : (isDark ? 'Switch to light theme' : 'Switch to dark theme');
+                    return Text(
+                      themeText,
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    );
+                  },
+                ),
               ),
 
               const SizedBox(height: AppSpacing.xl),
@@ -148,6 +186,80 @@ class SettingsScreen extends ConsumerWidget {
 
     if (confirmed == true) {
       await ref.read(statsNotifierProvider.notifier).resetStats();
+    }
+  }
+
+  Future<void> _reloadQuestions(
+    BuildContext context,
+    WidgetRef ref,
+    AppLanguage language,
+  ) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        final dialogTheme = Theme.of(dialogContext);
+        return PopScope(
+          canPop: false,
+          child: AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  color: dialogTheme.colorScheme.primary,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  language == AppLanguage.sv
+                      ? 'Laddar frågor från GitHub...'
+                      : 'Loading questions from GitHub...',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: dialogTheme.colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      final questionService = ref.read(questionServiceProvider);
+      await questionService.reloadFromGitHub();
+
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              language == AppLanguage.sv
+                  ? 'Frågor laddade från GitHub!'
+                  : 'Questions loaded from GitHub!',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+
+        // Show error message
+        final errorText = language == AppLanguage.sv
+            ? 'Kunde inte ladda frågor från GitHub: $e'
+            : 'Failed to load questions from GitHub: $e';
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorText),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 }

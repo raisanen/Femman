@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:femman/core/constants/app_spacing.dart';
 import 'package:femman/core/constants/app_strings.dart';
-import 'package:femman/core/theme/app_colors.dart';
 import 'package:femman/core/theme/app_theme.dart';
 import 'package:femman/core/theme/app_typography.dart';
 import 'package:femman/features/home/home_screen.dart';
@@ -88,12 +87,14 @@ class _FemmanAppState extends ConsumerState<FemmanApp> {
           );
         }
 
+        final themeMode = ref.watch(themeModeProvider);
+        
         return MaterialApp(
           title: 'Femman',
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.darkTheme,
+          theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.dark,
+          themeMode: themeMode,
           home: const HomeScreen(),
           routes: {
             '/quiz': (_) => const QuizScreen(),

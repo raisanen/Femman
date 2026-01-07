@@ -41,6 +41,36 @@ class QuestionService {
     }
   }
 
+  /// Reload questions from GitHub, ensuring no duplicates
+  /// Merges new questions with existing ones, removing duplicates by ID
+  Future<void> reloadFromGitHub() async {
+    try {
+      final newQuestions = await _githubLoader.loadQuestions();
+      
+      // Create a map of existing question IDs for quick lookup
+      final existingIds = _allQuestions.map((q) => q.id).toSet();
+      
+      // Filter out questions that already exist
+      final uniqueNewQuestions = newQuestions
+          .where((q) => !existingIds.contains(q.id))
+          .toList();
+      
+      // Merge: keep existing questions, add only new ones
+      _allQuestions = [..._allQuestions, ...uniqueNewQuestions];
+      _loadedFromGitHub = true;
+      
+      // Clear usage history since we have new questions
+      _recentlyUsedIds.clear();
+      
+      // ignore: avoid_print
+      print('Reloaded questions from GitHub: ${uniqueNewQuestions.length} new questions added, ${_allQuestions.length} total');
+    } catch (e) {
+      // ignore: avoid_print
+      print('Failed to reload questions from GitHub: $e');
+      rethrow;
+    }
+  }
+
   /// Check if questions were loaded from GitHub
   bool get loadedFromGitHub => _loadedFromGitHub;
 

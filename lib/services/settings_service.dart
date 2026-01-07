@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_strings.dart';
 
@@ -7,6 +8,7 @@ import '../core/constants/app_strings.dart';
 class SettingsService {
   static const _keyLanguage = 'language';
   static const _keyHasCompletedOnboarding = 'hasCompletedOnboarding';
+  static const _keyThemeMode = 'themeMode';
 
   SharedPreferences? _prefs;
 
@@ -66,6 +68,48 @@ class SettingsService {
   Future<void> setHasCompletedOnboarding(bool completed) async {
     if (_prefs == null) return;
     await _prefs!.setBool(_keyHasCompletedOnboarding, completed);
+  }
+
+  /// Get the current theme mode preference
+  /// Defaults to dark if not set
+  ThemeMode getThemeMode() {
+    if (_prefs == null) {
+      return ThemeMode.dark; // Default if not initialized
+    }
+
+    final themeModeString = _prefs!.getString(_keyThemeMode);
+    if (themeModeString == null) {
+      return ThemeMode.dark; // Default to dark
+    }
+
+    switch (themeModeString) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+        return ThemeMode.system;
+      default:
+        return ThemeMode.dark; // Fallback to dark
+    }
+  }
+
+  /// Set the theme mode preference
+  Future<void> setThemeMode(ThemeMode mode) async {
+    if (_prefs == null) return;
+    String modeString;
+    switch (mode) {
+      case ThemeMode.light:
+        modeString = 'light';
+        break;
+      case ThemeMode.dark:
+        modeString = 'dark';
+        break;
+      case ThemeMode.system:
+        modeString = 'system';
+        break;
+    }
+    await _prefs!.setString(_keyThemeMode, modeString);
   }
 
   /// Clear all settings (useful for testing or reset functionality)
