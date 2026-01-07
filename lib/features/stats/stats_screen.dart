@@ -33,7 +33,7 @@ class StatsScreen extends ConsumerWidget {
     final overallAccuracy = ref.watch(overallAccuracyProvider);
     final bestStreak = ref.watch(allTimeBestStreakProvider);
 
-    final overallPercentage = (overallAccuracy).clamp(0.0, 1.0) * 100;
+    final overallPercentage = overallAccuracy.clamp(0.0, 100.0);
 
     final theme = Theme.of(context);
     return Scaffold(
