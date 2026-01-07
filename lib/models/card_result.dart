@@ -14,13 +14,14 @@ class CardResult {
   final Map<Category, bool> results;
 
   @HiveField(2)
-  final Duration timeTaken;
+  final int timeTakenMilliseconds;
 
   CardResult({
     required this.cardId,
     required this.results,
-    required this.timeTaken,
-  }) : assert(
+    required Duration timeTaken,
+  }) : timeTakenMilliseconds = timeTaken.inMilliseconds,
+        assert(
           results.length == 5,
           'Must have results for all 5 categories',
         ) {
@@ -30,6 +31,9 @@ class CardResult {
       'Results must include all 5 categories',
     );
   }
+  
+  /// Get the time taken as a Duration
+  Duration get timeTaken => Duration(milliseconds: timeTakenMilliseconds);
 
   /// Computed score (0-5) based on correct answers
   int get score => results.values.where((correct) => correct).length;

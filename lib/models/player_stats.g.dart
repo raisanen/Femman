@@ -16,12 +16,29 @@ class PlayerStatsAdapter extends TypeAdapter<PlayerStats> {
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
+    // Handle web platform where Hive returns Map<dynamic, dynamic>
+    final categoryStatsMap = fields[3] as Map;
+    final categoryStats = <Category, CategoryStats>{};
+    for (final entry in categoryStatsMap.entries) {
+      final category = entry.key as Category;
+      final stats = entry.value as CategoryStats;
+      categoryStats[category] = stats;
+    }
+    
+    final difficultyMap = fields[4] as Map;
+    final currentDifficulty = <Category, Difficulty>{};
+    for (final entry in difficultyMap.entries) {
+      final category = entry.key as Category;
+      final difficulty = entry.value as Difficulty;
+      currentDifficulty[category] = difficulty;
+    }
+    
     return PlayerStats(
       totalCardsPlayed: fields[0] as int,
       totalCorrect: fields[1] as int,
       bestStreak: fields[2] as int,
-      categoryStats: (fields[3] as Map).cast<Category, CategoryStats>(),
-      currentDifficulty: (fields[4] as Map).cast<Category, Difficulty>(),
+      categoryStats: categoryStats,
+      currentDifficulty: currentDifficulty,
     );
   }
 

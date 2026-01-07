@@ -13,11 +13,13 @@ class StatsService {
   static const String _statsKey = 'current_stats';
   static const String _sessionBoxName = 'game_sessions';
 
-  late Box<PlayerStats> _statsBox;
-  late Box<GameSession> _sessionBox;
+  Box<PlayerStats>? _statsBox;
+  Box<GameSession>? _sessionBox;
 
   PlayerStats? _currentStats;
   GameSession? _currentSession;
+  
+  bool get _isInitialized => _statsBox != null && _sessionBox != null;
 
   /// Initialize Hive boxes and load current stats
   Future<void> init() async {
@@ -48,21 +50,30 @@ class StatsService {
     _sessionBox = await Hive.openBox<GameSession>(_sessionBoxName);
 
     // Load or create initial stats
-    _currentStats = _statsBox.get(_statsKey);
+    _currentStats = _statsBox!.get(_statsKey);
     if (_currentStats == null) {
       _currentStats = PlayerStats.initial();
       await _saveStats();
     }
+    
+    // ignore: avoid_print
+    print('StatsService initialized: totalCards=${_currentStats!.totalCardsPlayed}, totalCorrect=${_currentStats!.totalCorrect}');
   }
 
   /// Get current player statistics
   /// Always returns the latest in-memory stats
+  /// If stats box is open, also tries to reload from Hive to ensure consistency
   PlayerStats getStats() {
-    // Ensure we return the most up-to-date stats
-    // If _currentStats is null, try loading from Hive as fallback
+    // If _currentStats is null, try loading from Hive
     if (_currentStats == null) {
-      _currentStats = _statsBox.get(_statsKey) ?? PlayerStats.initial();
+      if (_isInitialized && _statsBox!.isOpen) {
+        _currentStats = _statsBox!.get(_statsKey) ?? PlayerStats.initial();
+      } else {
+        _currentStats = PlayerStats.initial();
+      }
     }
+    // Always return a fresh copy to ensure Riverpod detects changes
+    // This is important because Riverpod uses object identity for caching
     return _currentStats!;
   }
 
@@ -77,31 +88,59 @@ class StatsService {
   /// Record a card result and update all statistics
   /// This updates both session and overall player stats
   Future<void> recordCardResult(CardResult result) async {
-    // Update current session
-    final session = getCurrentSession();
-    _currentSession = session.addResult(result);
+    try {
+      // Ensure boxes are initialized
+      if (!_isInitialized) {
+        throw StateError('StatsService is not initialized. Call init() first.');
+      }
+      if (!_statsBox!.isOpen) {
+        throw StateError('Stats box is not open. Call init() first.');
+      }
+      if (!_sessionBox!.isOpen) {
+        throw StateError('Session box is not open. Call init() first.');
+      }
 
-    // Save session to history
-    await _sessionBox.put(_currentSession!.id, _currentSession!);
+      // Update current session
+      final session = getCurrentSession();
+      _currentSession = session.addResult(result);
 
-    // Update overall player stats
-    final stats = getStats();
-    _currentStats = stats.updateWithResult(result, _currentSession!.currentStreak);
+      // Save session to history
+      await _sessionBox!.put(_currentSession!.id, _currentSession!);
 
-    // Save updated stats to Hive
-    await _saveStats();
-    
-    // Reload from Hive to ensure consistency and trigger any listeners
-    // This ensures the next getStats() call gets the saved data
-    final savedStats = _statsBox.get(_statsKey);
-    if (savedStats != null) {
-      _currentStats = savedStats;
-    }
-    
-    // Reload session from Hive to ensure consistency
-    final savedSession = _sessionBox.get(_currentSession!.id);
-    if (savedSession != null) {
-      _currentSession = savedSession;
+      // Update overall player stats
+      final stats = getStats();
+      _currentStats = stats.updateWithResult(result, _currentSession!.currentStreak);
+
+      // Save updated stats to Hive
+      await _saveStats();
+      
+      // Verify the save worked
+      final savedStats = _statsBox!.get(_statsKey);
+      if (savedStats != null) {
+        _currentStats = savedStats;
+      } else {
+        // If save didn't work, log and try again
+        // ignore: avoid_print
+        print('Warning: Stats were not saved to Hive. Retrying...');
+        await _saveStats();
+        final retryStats = _statsBox!.get(_statsKey);
+        if (retryStats != null) {
+          _currentStats = retryStats;
+        }
+      }
+      
+      // Reload session from Hive to ensure consistency
+      final savedSession = _sessionBox!.get(_currentSession!.id);
+      if (savedSession != null) {
+        _currentSession = savedSession;
+      }
+    } catch (e, stackTrace) {
+      // Log the error for debugging
+      // ignore: avoid_print
+      print('Error recording card result: $e');
+      // ignore: avoid_print
+      print('Stack trace: $stackTrace');
+      rethrow;
     }
   }
 
@@ -129,8 +168,8 @@ class StatsService {
 
   /// End the current session and start a new one
   Future<void> endSession() async {
-    if (_currentSession != null) {
-      await _sessionBox.put(_currentSession!.id, _currentSession!);
+    if (_currentSession != null && _isInitialized) {
+      await _sessionBox!.put(_currentSession!.id, _currentSession!);
       _currentSession = null;
     }
   }
@@ -152,7 +191,8 @@ class StatsService {
 
   /// Get recent game sessions (up to count)
   List<GameSession> getRecentSessions({int count = 10}) {
-    final sessions = _sessionBox.values.toList()
+    if (!_isInitialized) return [];
+    final sessions = _sessionBox!.values.toList()
       ..sort((a, b) => b.startedAt.compareTo(a.startedAt));
     return sessions.take(count).toList();
   }
@@ -161,21 +201,37 @@ class StatsService {
   Future<void> resetStats() async {
     _currentStats = PlayerStats.initial();
     _currentSession = null;
-    await _statsBox.clear();
-    await _sessionBox.clear();
-    await _saveStats();
+    if (_isInitialized) {
+      await _statsBox!.clear();
+      await _sessionBox!.clear();
+      await _saveStats();
+    }
   }
 
   /// Clear only session history, keep overall stats
   Future<void> clearSessionHistory() async {
-    await _sessionBox.clear();
+    if (_isInitialized) {
+      await _sessionBox!.clear();
+    }
     _currentSession = null;
   }
 
   /// Save current stats to Hive
   Future<void> _saveStats() async {
-    if (_currentStats != null) {
-      await _statsBox.put(_statsKey, _currentStats!);
+    if (_currentStats != null && _isInitialized) {
+      await _statsBox!.put(_statsKey, _currentStats!);
+      // Verify the save
+      final saved = _statsBox!.get(_statsKey);
+      if (saved == null) {
+        // ignore: avoid_print
+        print('ERROR: Failed to save stats to Hive!');
+      } else if (saved.totalCardsPlayed != _currentStats!.totalCardsPlayed) {
+        // ignore: avoid_print
+        print('WARNING: Saved stats do not match current stats!');
+      } else {
+        // ignore: avoid_print
+        print('Stats saved successfully: totalCards=${saved.totalCardsPlayed}, totalCorrect=${saved.totalCorrect}');
+      }
     }
   }
 
@@ -206,7 +262,11 @@ class StatsService {
 
   /// Dispose resources
   Future<void> dispose() async {
-    await _statsBox.close();
-    await _sessionBox.close();
+    if (_statsBox != null && _statsBox!.isOpen) {
+      await _statsBox!.close();
+    }
+    if (_sessionBox != null && _sessionBox!.isOpen) {
+      await _sessionBox!.close();
+    }
   }
 }

@@ -7,9 +7,11 @@ import '../models/difficulty.dart';
 import '../models/card_result.dart';
 
 /// Provider for the StatsService singleton instance
+/// Uses keepAlive to ensure it's a true singleton
 final statsServiceProvider = Provider<StatsService>((ref) {
   final service = StatsService();
   ref.onDispose(() => service.dispose());
+  ref.keepAlive(); // Keep the service alive as a singleton
   return service;
 });
 
@@ -101,7 +103,15 @@ class StatsNotifier extends StateNotifier<AsyncValue<void>> {
   Future<void> recordCardResult(CardResult result) async {
     state = const AsyncValue.loading();
     try {
+      // ignore: avoid_print
+      print('Recording card result: score=${result.score}, cardId=${result.cardId}');
       await _statsService.recordCardResult(result);
+      
+      // Verify stats were updated
+      final updatedStats = _statsService.getStats();
+      // ignore: avoid_print
+      print('Stats after recording: totalCards=${updatedStats.totalCardsPlayed}, totalCorrect=${updatedStats.totalCorrect}');
+      
       // Invalidate all stats-related providers to force refresh
       _ref.invalidate(playerStatsProvider);
       _ref.invalidate(currentStreakProvider);
@@ -116,8 +126,16 @@ class StatsNotifier extends StateNotifier<AsyncValue<void>> {
         _ref.invalidate(categoryAccuracyProvider(category));
       }
       _ref.invalidate(allDifficultiesProvider);
+      
+      // Force a rebuild by reading the provider again
+      _ref.read(playerStatsProvider);
+      
       state = const AsyncValue.data(null);
     } catch (error, stackTrace) {
+      // ignore: avoid_print
+      print('ERROR recording card result: $error');
+      // ignore: avoid_print
+      print('Stack trace: $stackTrace');
       state = AsyncValue.error(error, stackTrace);
     }
   }

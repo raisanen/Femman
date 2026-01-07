@@ -39,12 +39,18 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (_recorded) return;
       _recorded = true;
-      await ref
-          .read(statsNotifierProvider.notifier)
-          .recordCardResult(widget.result);
-      // Force a rebuild after stats are recorded
-      if (mounted) {
-        setState(() {});
+      try {
+        await ref
+            .read(statsNotifierProvider.notifier)
+            .recordCardResult(widget.result);
+        // Force a rebuild after stats are recorded
+        if (mounted) {
+          setState(() {});
+        }
+      } catch (e) {
+        // Log error but don't crash the UI
+        // ignore: avoid_print
+        print('Error recording stats: $e');
       }
     });
   }

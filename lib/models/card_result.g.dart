@@ -16,10 +16,19 @@ class CardResultAdapter extends TypeAdapter<CardResult> {
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
+    // Handle web platform where Hive returns Map<dynamic, dynamic>
+    final resultsMap = fields[1] as Map;
+    final results = <Category, bool>{};
+    for (final entry in resultsMap.entries) {
+      final category = entry.key as Category;
+      final isCorrect = entry.value as bool;
+      results[category] = isCorrect;
+    }
+    
     return CardResult(
       cardId: fields[0] as String,
-      results: (fields[1] as Map).cast<Category, bool>(),
-      timeTaken: fields[2] as Duration,
+      results: results,
+      timeTaken: Duration(milliseconds: fields[2] as int),
     );
   }
 
@@ -32,7 +41,7 @@ class CardResultAdapter extends TypeAdapter<CardResult> {
       ..writeByte(1)
       ..write(obj.results)
       ..writeByte(2)
-      ..write(obj.timeTaken);
+      ..write(obj.timeTakenMilliseconds);
   }
 
   @override
