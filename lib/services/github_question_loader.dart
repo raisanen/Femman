@@ -143,34 +143,33 @@ class GitHubQuestionLoader {
 
   /// Parse category string to Category enum
   Category _parseCategory(String categoryStr) {
-    switch (categoryStr) {
-      case 'nowThen':
-        return Category.nowThen;
-      case 'entertainment':
-        return Category.entertainment;
-      case 'nearFar':
-        return Category.nearFar;
-      case 'sportMisc':
-        return Category.sportMisc;
-      case 'scienceTech':
-        return Category.scienceTech;
-      default:
-        throw ArgumentError('Unknown category: $categoryStr');
-    }
+    final normalized = categoryStr
+        .toLowerCase()
+        .replaceAll(RegExp(r'[\s\-_]'), ''); // remove spaces, hyphens, underscores
+
+    if (normalized.contains('nowthen')) return Category.nowThen;
+    if (normalized.contains('entertainment')) return Category.entertainment;
+    if (normalized.contains('nearfar')) return Category.nearFar;
+    if (normalized.contains('sportmisc')) return Category.sportMisc;
+    if (normalized.contains('sciencetech')) return Category.scienceTech;
+
+    throw ArgumentError('Unknown category: $categoryStr');
   }
 
   /// Parse difficulty string to Difficulty enum
   Difficulty _parseDifficulty(String difficultyStr) {
-    switch (difficultyStr) {
-      case 'easy':
-        return Difficulty.easy;
-      case 'medium':
-        return Difficulty.medium;
-      case 'hard':
-        return Difficulty.hard;
-      default:
-        throw ArgumentError('Unknown difficulty: $difficultyStr');
+    final norm = difficultyStr
+        .toLowerCase()
+        .replaceAll(RegExp(r'[\s\-_]'), ''); // remove spaces, hyphens, underscores
+
+    if (norm.contains('easy')) {
+      return Difficulty.easy;
+    } else if (norm.contains('medium')) {
+      return Difficulty.medium;
+    } else if (norm.contains('hard')) {
+      return Difficulty.hard;
     }
+    throw ArgumentError('Unknown difficulty: $difficultyStr');
   }
 
   /// Dispose resources
