@@ -5,24 +5,44 @@ import '../models/quiz_card.dart';
 import '../models/category.dart';
 import '../models/difficulty.dart';
 import 'json_question_loader.dart';
+import 'github_question_loader.dart';
 
-/// Service for loading and selecting questions from JSON assets.
+/// Service for loading and selecting questions from GitHub or JSON assets.
 /// Questions are kept in memory with simple usage tracking to avoid repetition.
 class QuestionService {
   final JsonQuestionLoader _jsonLoader;
+  final GitHubQuestionLoader _githubLoader;
   List<Question> _allQuestions = [];
   final Set<String> _recentlyUsedIds = {};
   static const int _recentUsageWindow = 20; // Avoid repeating last 20 questions (reduced for small question pools)
   final _random = Random();
+  bool _loadedFromGitHub = false;
 
   QuestionService({
     required JsonQuestionLoader jsonLoader,
-  }) : _jsonLoader = jsonLoader;
+    required GitHubQuestionLoader githubLoader,
+  }) : _jsonLoader = jsonLoader,
+       _githubLoader = githubLoader;
 
-  /// Initialize the service by loading questions from JSON.
+  /// Initialize the service by loading questions from GitHub, falling back to assets.
   Future<void> init() async {
-    _allQuestions = await _jsonLoader.loadQuestions();
+    try {
+      // Try loading from GitHub first
+      _allQuestions = await _githubLoader.loadQuestions();
+      _loadedFromGitHub = true;
+      // ignore: avoid_print
+      print('Successfully loaded questions from GitHub');
+    } catch (e) {
+      // Fall back to asset loading
+      // ignore: avoid_print
+      print('GitHub loading failed, falling back to assets: $e');
+      _allQuestions = await _jsonLoader.loadQuestions();
+      _loadedFromGitHub = false;
+    }
   }
+
+  /// Check if questions were loaded from GitHub
+  bool get loadedFromGitHub => _loadedFromGitHub;
 
   /// Get a quiz card with 5 questions (one per category) at specified difficulties
   Future<QuizCard> getQuizCard(Map<Category, Difficulty> difficulties) async {

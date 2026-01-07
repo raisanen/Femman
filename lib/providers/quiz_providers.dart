@@ -1,15 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/question_service.dart';
 import '../services/json_question_loader.dart';
+import '../services/github_question_loader.dart';
 import '../models/quiz_card.dart';
 import '../models/category.dart';
 import 'stats_providers.dart';
 
+/// Provider for JsonQuestionLoader singleton (fallback)
+final jsonQuestionLoaderProvider = Provider<JsonQuestionLoader>((ref) {
+  return JsonQuestionLoader();
+});
+
+/// Provider for GitHubQuestionLoader singleton
+final githubQuestionLoaderProvider = Provider<GitHubQuestionLoader>((ref) {
+  final loader = GitHubQuestionLoader();
+  ref.onDispose(() => loader.dispose());
+  return loader;
+});
+
 /// Provider for the QuestionService singleton instance
 final questionServiceProvider = Provider<QuestionService>((ref) {
-  final jsonLoader = JsonQuestionLoader();
   final service = QuestionService(
-    jsonLoader: jsonLoader,
+    jsonLoader: ref.watch(jsonQuestionLoaderProvider),
+    githubLoader: ref.watch(githubQuestionLoaderProvider),
   );
   ref.onDispose(() => service.dispose());
   return service;

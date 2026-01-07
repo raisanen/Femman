@@ -4,13 +4,14 @@ import '../models/question.dart';
 import '../models/category.dart';
 import '../models/difficulty.dart';
 
-/// Service for loading questions from JSON assets
+/// Service for loading questions from JSON assets (fallback)
 class JsonQuestionLoader {
   static const String _questionsAssetPath = 'assets/questions.json';
   
   List<Question>? _cachedQuestions;
 
   /// Load all questions from JSON asset
+  /// This is used as a fallback when GitHub loading fails
   Future<List<Question>> loadQuestions() async {
     if (_cachedQuestions != null) {
       return _cachedQuestions!;
@@ -21,9 +22,11 @@ class JsonQuestionLoader {
       final List<dynamic> jsonList = json.decode(jsonString) as List<dynamic>;
       
       _cachedQuestions = jsonList.map((json) => _parseQuestion(json)).toList();
+      // ignore: avoid_print
+      print('Loaded ${_cachedQuestions!.length} questions from assets');
       return _cachedQuestions!;
     } catch (e) {
-      throw Exception('Failed to load questions from JSON: $e');
+      throw Exception('Failed to load questions from JSON assets: $e');
     }
   }
 
