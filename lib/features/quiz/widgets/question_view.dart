@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:femman/core/constants/app_spacing.dart';
-import 'package:femman/core/constants/app_strings.dart';
-import 'package:femman/core/theme/app_colors.dart';
+import 'package:femman/core/constants/app_strings.dart' show AppLanguage, AppStrings;
 import 'package:femman/core/theme/app_typography.dart';
 import 'package:femman/models/question.dart';
-import 'package:femman/core/constants/app_strings.dart' show AppLanguage;
 import 'package:femman/features/quiz/widgets/answer_button.dart';
 import 'package:femman/features/quiz/widgets/category_label.dart';
 
@@ -60,9 +58,10 @@ class QuestionView extends StatelessWidget {
     final isAnswered = selectedAnswer != null;
     final funFact = question.getFunFact(language);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
         // Top row: category label + question number
         Padding(
           padding: const EdgeInsets.symmetric(
@@ -177,7 +176,8 @@ class QuestionView extends StatelessWidget {
             ),
           ),
         ],
-      ],
+        ],
+      ),
     );
   }
 }
