@@ -82,21 +82,21 @@ class AnswerButton extends StatelessWidget {
     final borderColor = isDark ? AppColors.borderDefaultDark : AppColors.borderDefault;
     final backgroundColor = isDark ? AppColors.backgroundDark : AppColors.white;
     
-    // Correct state has top priority
+    // Correct state has top priority - use vibrant magenta/fuchsia for high contrast
     if (isCorrect) {
       return _AnswerButtonColors(
-        background: theme.colorScheme.primary,
-        border: theme.colorScheme.primary,
-        text: AppColors.white,
+        background: AppColors.accentBright, // Vibrant magenta/fuchsia
+        border: AppColors.accentBright,
+        text: AppColors.backgroundDark, // Dark text on bright background
       );
     }
 
-    // Incorrect state
+    // Incorrect state - use muted purple with reduced opacity
     if (isIncorrect) {
       return _AnswerButtonColors(
-        background: theme.colorScheme.onSurface.withOpacity(0.08),
-        border: theme.colorScheme.onSurface.withOpacity(0.7),
-        text: theme.colorScheme.onSurface,
+        background: AppColors.accentDark.withOpacity(0.15), // Muted purple/plum
+        border: AppColors.accentDark.withOpacity(0.5),
+        text: theme.colorScheme.onSurface.withOpacity(0.6), // Dimmed text
       );
     }
 

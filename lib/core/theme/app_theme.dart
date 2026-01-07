@@ -14,11 +14,12 @@ class AppTheme {
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.backgroundDark,
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.accentDark,
-        secondary: AppColors.textSecondaryDark,
+        primary: AppColors.accentDark, // Muted purple/plum
+        secondary: AppColors.accentBright, // Vibrant magenta/fuchsia
         surface: AppColors.backgroundDark,
-        onSurface: AppColors.textPrimaryDark,
-        error: AppColors.accentDark,
+        onSurface: AppColors.textPrimaryDark, // Light beige/pale peach
+        onSecondary: AppColors.backgroundDark,
+        error: AppColors.accentBright,
       ),
 
       // Typography
@@ -54,24 +55,25 @@ class AppTheme {
         backgroundColor: AppColors.backgroundDark,
         foregroundColor: AppColors.textPrimaryDark,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         titleTextStyle: AppTypography.headlineMedium.copyWith(
           color: AppColors.textPrimaryDark,
         ),
       ),
 
-      // Button themes — minimal with focus on typography
+      // Button themes — bold, high-contrast
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.accentDark,
-          foregroundColor: AppColors.white,
+          backgroundColor: AppColors.accentBright, // Vibrant magenta/fuchsia
+          foregroundColor: AppColors.backgroundDark,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(4),
           ),
           textStyle: AppTypography.labelLarge.copyWith(
-            color: AppColors.white,
+            color: AppColors.backgroundDark,
+            fontWeight: FontWeight.w800,
           ),
         ),
       ),
@@ -86,6 +88,7 @@ class AppTheme {
           ),
           textStyle: AppTypography.bodyMedium.copyWith(
             color: AppColors.textPrimaryDark,
+            fontWeight: FontWeight.w800,
           ),
         ),
       ),
@@ -96,6 +99,7 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           textStyle: AppTypography.bodyMedium.copyWith(
             color: AppColors.textPrimaryDark,
+            fontWeight: FontWeight.w800,
           ),
         ),
       ),

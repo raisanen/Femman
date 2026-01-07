@@ -12,13 +12,13 @@ class AppStrings {
   // ===== HOME SCREEN =====
 
   static String playButton(AppLanguage lang) =>
-      lang == AppLanguage.sv ? 'SPELA' : 'PLAY';
+      lang == AppLanguage.sv ? 'Spela' : 'Play';
 
   static String statsButton(AppLanguage lang) =>
-      lang == AppLanguage.sv ? 'STATISTIK' : 'STATISTICS';
+      lang == AppLanguage.sv ? 'Statistik' : 'Statistics';
 
   static String settingsButton(AppLanguage lang) =>
-      lang == AppLanguage.sv ? 'INSTÄLLNINGAR' : 'SETTINGS';
+      lang == AppLanguage.sv ? 'Inställningar' : 'Settings';
 
   static String appTitle(AppLanguage lang) =>
       lang == AppLanguage.sv ? 'Femman' : 'Femman';
@@ -36,6 +36,9 @@ class AppStrings {
   static String tapToContinue(AppLanguage lang) =>
       lang == AppLanguage.sv ? 'Tryck för att fortsätta' : 'Tap to continue';
 
+  static String nextQuestionButton(AppLanguage lang) =>
+      lang == AppLanguage.sv ? 'Nästa fråga' : 'Next question';
+
   // ===== CATEGORY NAMES =====
 
   static String categoryNowThen(AppLanguage lang) =>
@@ -45,7 +48,7 @@ class AppStrings {
       lang == AppLanguage.sv ? 'Nöje & Kultur' : 'Entertainment & Culture';
 
   static String categoryNearFar(AppLanguage lang) =>
-      lang == AppLanguage.sv ? 'Nära & Fjärran' : 'Near & Far';
+      lang == AppLanguage.sv ? 'När & Fjärran' : 'Near & Far';
 
   static String categorySportMisc(AppLanguage lang) =>
       lang == AppLanguage.sv ? 'Sport & Blandat' : 'Sport & Misc';
@@ -71,10 +74,10 @@ class AppStrings {
       lang == AppLanguage.sv ? 'Försök igen!' : 'Keep trying!';
 
   static String nextCardButton(AppLanguage lang) =>
-      lang == AppLanguage.sv ? 'NÄSTA KORT' : 'NEXT CARD';
+      lang == AppLanguage.sv ? 'Nästa kort' : 'Next card';
 
   static String homeButton(AppLanguage lang) =>
-      lang == AppLanguage.sv ? 'HEM' : 'HOME';
+      lang == AppLanguage.sv ? 'Hem' : 'Home';
 
   static String correct(AppLanguage lang) =>
       lang == AppLanguage.sv ? 'Rätt' : 'Correct';
@@ -108,7 +111,7 @@ class AppStrings {
 
   static String accuracy(AppLanguage lang, double percentage) =>
       lang == AppLanguage.sv
-          ? 'Noggrannhet: ${percentage.toStringAsFixed(1)}%'
+          ? 'Procent rätt: ${percentage.toStringAsFixed(1)}%'
           : 'Accuracy: ${percentage.toStringAsFixed(1)}%';
 
   static String categoryStats(AppLanguage lang) =>
@@ -173,5 +176,5 @@ class AppStrings {
   static String ok(AppLanguage lang) => lang == AppLanguage.sv ? 'OK' : 'OK';
 
   static String cancel(AppLanguage lang) =>
-      lang == AppLanguage.sv ? 'AVBRYT' : 'CANCEL';
+      lang == AppLanguage.sv ? 'Avbryt' : 'Cancel';
 }

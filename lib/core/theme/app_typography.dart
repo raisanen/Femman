@@ -7,28 +7,34 @@ import 'app_colors.dart';
 class AppTypography {
   AppTypography._();
 
-  /// Display — Large numbers, scores (72pt, Inter Tight, weight 700)
+  /// Display — Large numbers, scores (72pt, Inter Tight, weight 800)
+  /// Bold, blocky style matching poster aesthetic
   static TextStyle get displayLarge => GoogleFonts.interTight(
         fontSize: 72,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w800, // Extra bold for poster style
         color: AppColors.textPrimary,
         height: 1.0,
+        letterSpacing: -1.0, // Tighter spacing for blocky look
       );
 
-  /// Headline Large — Category labels, screen titles (32pt, Inter, weight 600)
+  /// Headline Large — Category labels, screen titles (32pt, Inter, weight 800)
+  /// Bold, prominent style
   static TextStyle get headlineLarge => GoogleFonts.inter(
         fontSize: 32,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w800, // Bolder for poster style
         color: AppColors.textPrimary,
         height: 1.2,
+        letterSpacing: -0.5,
       );
 
-  /// Headline Medium — Section headers (24pt, Inter, weight 600)
+  /// Headline Medium — Section headers (24pt, Inter, weight 700)
+  /// Bold, prominent style
   static TextStyle get headlineMedium => GoogleFonts.inter(
         fontSize: 24,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700, // Bolder for poster style
         color: AppColors.textPrimary,
         height: 1.3,
+        letterSpacing: -0.3,
       );
 
   /// Body Large — Questions (20pt, Inter, weight 500)

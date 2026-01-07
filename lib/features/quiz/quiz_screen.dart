@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:femman/core/constants/app_spacing.dart';
@@ -28,7 +26,6 @@ class QuizScreen extends ConsumerStatefulWidget {
 
 class _QuizScreenState extends ConsumerState<QuizScreen> {
   bool _showResult = false;
-  Timer? _resultTimer;
 
   @override
   void initState() {
@@ -39,12 +36,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(quizControllerProvider.notifier).startNewCard();
     });
-  }
-
-  @override
-  void dispose() {
-    _resultTimer?.cancel();
-    super.dispose();
   }
 
   @override
@@ -65,16 +56,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
         automaticallyImplyLeading: true,
       ),
       body: SafeArea(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            if (_showResult) {
-              _resultTimer?.cancel();
-              _advanceOrFinish();
-            }
-          },
-          child: _buildBody(context, quizState, language),
-        ),
+        child: _buildBody(context, quizState, language),
       ),
     );
   }
@@ -189,20 +171,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
         ),
         const SizedBox(height: AppSpacing.lg),
         if (_showResult)
-          Builder(
-            builder: (context) {
-              final theme = Theme.of(context);
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Text(
-                  AppStrings.tapToContinue(language),
-                  style: AppTypography.labelMedium.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              );
-            },
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: ElevatedButton(
+              onPressed: _advanceOrFinish,
+              child: Text(AppStrings.nextQuestionButton(language)),
+            ),
           ),
         const SizedBox(height: AppSpacing.md),
         Padding(
@@ -234,16 +208,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       _showResult = true;
     });
 
-    _resultTimer?.cancel();
-    _resultTimer = Timer(const Duration(milliseconds: 1500), () {
-      _advanceOrFinish();
-    });
+    // No automatic timer - user must click the button to continue
   }
 
   void _advanceOrFinish() {
     final controller = ref.read(quizControllerProvider.notifier);
-
-    _resultTimer?.cancel();
 
     // If there are more questions, move to next
     if (controller.canAdvance()) {

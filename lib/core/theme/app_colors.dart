@@ -1,32 +1,33 @@
 import 'package:flutter/material.dart';
 
-/// Femman color palette following Swiss typography principles.
-/// Limited, purposeful colors with generous whitespace.
+/// Femman color palette inspired by bold, high-contrast poster design.
+/// Vibrant colors on dark background with strong typography focus.
 class AppColors {
   AppColors._();
 
-  // Light theme palette
+  // Dark theme palette (primary theme, matching poster style)
+  static const backgroundDark = Color(0xFF0D0D0D); // Dark charcoal/black
+  static const textPrimaryDark = Color(0xFFE8D5C4); // Light beige/pale peach
+  static const textSecondaryDark = Color(0xFF7FDBCA); // Light teal/mint green
+  static const accentDark = Color(0xFF9B8BB0); // Muted purple/plum
+  static const accentBright = Color(0xFFFF1493); // Vibrant magenta/fuchsia
+
+  // Light theme palette (fallback)
   static const background = Color(0xFFFAFAFA); // Off-white
   static const textPrimary = Color(0xFF1A1A1A); // Near-black
   static const textSecondary = Color(0xFF6B6B6B); // Grey
-  static const accent = Color(0xFFE63946); // Confident red
+  static const accent = Color(0xFF9B8BB0); // Muted purple/plum
 
-  // Dark theme palette
-  static const backgroundDark = Color(0xFF121212); // Near-black
-  static const textPrimaryDark = Color(0xFFE0E0E0); // Light grey
-  static const textSecondaryDark = Color(0xFF9E9E9E); // Medium grey
-  static const accentDark = Color(0xFFFF5252); // Brighter red for dark mode
-
-  // Category accents (subtle, used sparingly) - work in both themes
-  static const categoryNowThen = Color(0xFFD4A574); // Muted ochre
-  static const categoryEntertainment = Color(0xFFD4A5A5); // Dusty rose
-  static const categoryNearFar = Color(0xFF7C9299); // Slate blue
-  static const categorySportMisc = Color(0xFF9CAF88); // Sage green
-  static const categoryScienceTech = Color(0xFF9E9E9E); // Cool grey
+  // Category accents (inspired by poster color palette)
+  static const categoryNowThen = Color(0xFFE8D5C4); // Light beige/pale peach
+  static const categoryEntertainment = Color(0xFFFF1493); // Vibrant magenta/fuchsia
+  static const categoryNearFar = Color(0xFF7FDBCA); // Light teal/mint green
+  static const categorySportMisc = Color(0xFF9B8BB0); // Muted purple/plum
+  static const categoryScienceTech = Color(0xFFE8D5C4); // Light beige/pale peach
 
   // UI element colors
   static const borderDefault = Color(0x33666666); // textSecondary at 20% opacity
-  static const borderDefaultDark = Color(0x33E0E0E0); // textPrimaryDark at 20% opacity
+  static const borderDefaultDark = Color(0x33E8D5C4); // textPrimaryDark at 20% opacity
   static const white = Color(0xFFFFFFFF);
   static const black = Color(0xFF000000);
 }
