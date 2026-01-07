@@ -35,12 +35,15 @@ class StatsScreen extends ConsumerWidget {
 
     final overallPercentage = (overallAccuracy).clamp(0.0, 1.0) * 100;
 
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           AppStrings.statsTitle(language),
-          style: AppTypography.headlineMedium,
+          style: AppTypography.headlineMedium.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
         ),
         automaticallyImplyLeading: true,
       ),
@@ -65,7 +68,7 @@ class StatsScreen extends ConsumerWidget {
               Text(
                 AppStrings.categoryStats(language),
                 style: AppTypography.labelLarge.copyWith(
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -115,31 +118,38 @@ class _OverallStatsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           AppStrings.totalCards(language, totalCards),
-          style: AppTypography.bodyMedium,
+          style: AppTypography.bodyMedium.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
           AppStrings.totalCorrect(language, totalCorrect),
-          style: AppTypography.bodyMedium,
+          style: AppTypography.bodyMedium.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
         ),
         if (totalQuestionsAttempted > 0) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
             AppStrings.accuracy(language, overallPercentage),
             style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
         ],
         const SizedBox(height: AppSpacing.xs),
         Text(
           AppStrings.bestStreak(language, bestStreak),
-          style: AppTypography.bodyMedium,
+          style: AppTypography.bodyMedium.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
         ),
       ],
     );
@@ -163,6 +173,7 @@ class _CategoryStatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final label = category.localizedName(language);
     final difficultyLabel = difficulty.displayName(language);
     final percentageText = '${percentage.toStringAsFixed(0)}%';
@@ -187,13 +198,15 @@ class _CategoryStatsRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: AppTypography.bodyMedium,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
               ),
               Text(
                 percentageText,
                 style: AppTypography.labelMedium.copyWith(
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
             ],
@@ -205,11 +218,14 @@ class _CategoryStatsRow extends StatelessWidget {
             builder: (context, constraints) {
               final maxWidth = constraints.maxWidth;
               final barWidth = maxWidth * (percentage / 100).clamp(0.0, 1.0);
+              final borderColor = theme.brightness == Brightness.dark
+                  ? AppColors.borderDefaultDark
+                  : AppColors.borderDefault;
 
               return Container(
                 height: 6,
-                decoration: const BoxDecoration(
-                  color: AppColors.borderDefault,
+                decoration: BoxDecoration(
+                  color: borderColor,
                 ),
                 child: Align(
                   alignment: Alignment.centerLeft,
@@ -230,14 +246,14 @@ class _CategoryStatsRow extends StatelessWidget {
               Text(
                 AppStrings.currentDifficulty(language, difficultyLabel),
                 style: AppTypography.labelMedium.copyWith(
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
               Text(
                 '${attempted.toString()} '
                 '${language == AppLanguage.sv ? "försök" : "attempts"}',
                 style: AppTypography.labelMedium.copyWith(
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
             ],

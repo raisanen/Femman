@@ -14,7 +14,8 @@ final statsServiceProvider = Provider<StatsService>((ref) {
 });
 
 /// Provider for current player statistics (refreshable)
-final playerStatsProvider = StateProvider<PlayerStats>((ref) {
+/// This provider reads directly from the service, which ensures fresh data
+final playerStatsProvider = Provider<PlayerStats>((ref) {
   final service = ref.watch(statsServiceProvider);
   return service.getStats();
 });
@@ -101,8 +102,20 @@ class StatsNotifier extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       await _statsService.recordCardResult(result);
-      // Refresh the player stats provider
+      // Invalidate all stats-related providers to force refresh
       _ref.invalidate(playerStatsProvider);
+      _ref.invalidate(currentStreakProvider);
+      _ref.invalidate(allTimeBestStreakProvider);
+      _ref.invalidate(totalCardsPlayedProvider);
+      _ref.invalidate(totalCorrectAnswersProvider);
+      _ref.invalidate(overallAccuracyProvider);
+      // Invalidate category-specific providers
+      for (final category in Category.values) {
+        _ref.invalidate(categoryStatsProvider(category));
+        _ref.invalidate(categoryDifficultyProvider(category));
+        _ref.invalidate(categoryAccuracyProvider(category));
+      }
+      _ref.invalidate(allDifficultiesProvider);
       state = const AsyncValue.data(null);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
@@ -114,8 +127,20 @@ class StatsNotifier extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       await _statsService.resetStats();
-      // Refresh the player stats provider
+      // Invalidate all stats-related providers to force refresh
       _ref.invalidate(playerStatsProvider);
+      _ref.invalidate(currentStreakProvider);
+      _ref.invalidate(allTimeBestStreakProvider);
+      _ref.invalidate(totalCardsPlayedProvider);
+      _ref.invalidate(totalCorrectAnswersProvider);
+      _ref.invalidate(overallAccuracyProvider);
+      // Invalidate category-specific providers
+      for (final category in Category.values) {
+        _ref.invalidate(categoryStatsProvider(category));
+        _ref.invalidate(categoryDifficultyProvider(category));
+        _ref.invalidate(categoryAccuracyProvider(category));
+      }
+      _ref.invalidate(allDifficultiesProvider);
       state = const AsyncValue.data(null);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);

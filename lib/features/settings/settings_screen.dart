@@ -21,12 +21,15 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final language = ref.watch(languageProvider);
 
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           AppStrings.settingsTitle(language),
-          style: AppTypography.headlineMedium,
+          style: AppTypography.headlineMedium.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
         ),
         automaticallyImplyLeading: true,
       ),
@@ -40,7 +43,7 @@ class SettingsScreen extends ConsumerWidget {
               Text(
                 AppStrings.languageLabel(language),
                 style: AppTypography.labelLarge.copyWith(
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -78,7 +81,7 @@ class SettingsScreen extends ConsumerWidget {
                 child: Text(
                   language == AppLanguage.sv ? 'Återställ statistik' : 'Reset stats',
                   style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.textPrimary,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -89,7 +92,7 @@ class SettingsScreen extends ConsumerWidget {
               Text(
                 language == AppLanguage.sv ? 'Version $_appVersion' : 'Version $_appVersion',
                 style: AppTypography.labelMedium.copyWith(
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
             ],
@@ -112,15 +115,20 @@ class SettingsScreen extends ConsumerWidget {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
+        final dialogTheme = Theme.of(dialogContext);
         return AlertDialog(
           title: Text(
             title,
-            style: AppTypography.headlineMedium,
+            style: AppTypography.headlineMedium.copyWith(
+              color: dialogTheme.colorScheme.onSurface,
+            ),
           ),
           content: Text(
             message,
-            style: AppTypography.bodyMedium,
+            style: AppTypography.bodyMedium.copyWith(
+              color: dialogTheme.colorScheme.onSurface,
+            ),
           ),
           actions: [
             TextButton(
@@ -157,6 +165,11 @@ class _LanguageChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.borderDefaultDark : AppColors.borderDefault;
+    final backgroundColor = isDark ? AppColors.backgroundDark : AppColors.white;
+    
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -165,14 +178,14 @@ class _LanguageChip extends StatelessWidget {
             vertical: AppSpacing.sm,
           ),
           decoration: BoxDecoration(
-            color: selected ? AppColors.textPrimary : AppColors.white,
-            border: Border.all(color: AppColors.borderDefault, width: 1),
+            color: selected ? theme.colorScheme.primary : backgroundColor,
+            border: Border.all(color: borderColor, width: 1),
           ),
           child: Center(
             child: Text(
               label.toUpperCase(),
               style: AppTypography.labelMedium.copyWith(
-                color: selected ? AppColors.white : AppColors.textPrimary,
+                color: selected ? AppColors.white : theme.colorScheme.onSurface,
               ),
             ),
           ),

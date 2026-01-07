@@ -39,9 +39,10 @@ class AnswerButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final effectiveOnTap = isDisabled ? null : onTap;
 
-    final colors = _resolveColors();
+    final colors = _resolveColors(theme);
 
     return Opacity(
       opacity: isDisabled ? 0.7 : 1.0,
@@ -76,12 +77,16 @@ class AnswerButton extends StatelessWidget {
     );
   }
 
-  _AnswerButtonColors _resolveColors() {
+  _AnswerButtonColors _resolveColors(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.borderDefaultDark : AppColors.borderDefault;
+    final backgroundColor = isDark ? AppColors.backgroundDark : AppColors.white;
+    
     // Correct state has top priority
     if (isCorrect) {
       return _AnswerButtonColors(
-        background: AppColors.accent,
-        border: AppColors.accent,
+        background: theme.colorScheme.primary,
+        border: theme.colorScheme.primary,
         text: AppColors.white,
       );
     }
@@ -89,26 +94,26 @@ class AnswerButton extends StatelessWidget {
     // Incorrect state
     if (isIncorrect) {
       return _AnswerButtonColors(
-        background: AppColors.textSecondary.withOpacity(0.08),
-        border: AppColors.textSecondary,
-        text: AppColors.textPrimary,
+        background: theme.colorScheme.onSurface.withOpacity(0.08),
+        border: theme.colorScheme.onSurface.withOpacity(0.7),
+        text: theme.colorScheme.onSurface,
       );
     }
 
     // Selected state (pre-feedback)
     if (isSelected) {
       return _AnswerButtonColors(
-        background: AppColors.white,
-        border: AppColors.textPrimary,
-        text: AppColors.textPrimary,
+        background: backgroundColor,
+        border: theme.colorScheme.onSurface,
+        text: theme.colorScheme.onSurface,
       );
     }
 
     // Default state
     return _AnswerButtonColors(
-      background: AppColors.white,
-      border: AppColors.borderDefault,
-      text: AppColors.textPrimary,
+      background: backgroundColor,
+      border: borderColor,
+      text: theme.colorScheme.onSurface,
     );
   }
 }

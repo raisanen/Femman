@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/question_service.dart';
-import '../services/question_cache_service.dart';
 import '../services/json_question_loader.dart';
 import '../models/quiz_card.dart';
 import '../models/category.dart';
@@ -8,10 +7,8 @@ import 'stats_providers.dart';
 
 /// Provider for the QuestionService singleton instance
 final questionServiceProvider = Provider<QuestionService>((ref) {
-  final cacheService = QuestionCacheService();
   final jsonLoader = JsonQuestionLoader();
   final service = QuestionService(
-    cacheService: cacheService,
     jsonLoader: jsonLoader,
   );
   ref.onDispose(() => service.dispose());
@@ -133,7 +130,7 @@ class QuizNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
 
-  /// Warmup cache on app startup
+  /// Warmup on app startup (ensures questions are loaded)
   Future<void> warmupCache() async {
     try {
       await _questionService.warmupCache();
@@ -143,15 +140,3 @@ class QuizNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 }
-
-/// Provider for cache health summary
-final cacheHealthSummaryProvider = Provider((ref) {
-  final service = ref.watch(questionServiceProvider);
-  return service.getCacheHealthSummary();
-});
-
-/// Provider to check if cache is healthy
-final isCacheHealthyProvider = Provider<bool>((ref) {
-  final service = ref.watch(questionServiceProvider);
-  return service.isCacheHealthy();
-});

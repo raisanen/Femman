@@ -29,12 +29,13 @@ class CategoryLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final labelText = category.localizedName(language).toUpperCase();
 
     final label = Text(
       labelText,
       style: AppTypography.labelLarge.copyWith(
-        color: AppColors.textPrimary,
+        color: theme.colorScheme.onSurface,
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,

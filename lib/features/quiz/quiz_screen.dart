@@ -34,13 +34,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   void initState() {
     super.initState();
 
-    // Start a new card on first mount if needed
+    // Always start a new card when this screen is mounted
+    // This ensures a fresh card when navigating from results screen or home
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final controller = ref.read(quizControllerProvider.notifier);
-      final state = ref.read(quizControllerProvider);
-      if (state.currentCard == null && !state.isLoading) {
-        controller.startNewCard();
-      }
+      ref.read(quizControllerProvider.notifier).startNewCard();
     });
   }
 
@@ -55,12 +52,15 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     final quizState = ref.watch(quizControllerProvider);
     final language = ref.watch(languageProvider);
 
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           AppStrings.appTitle(language),
-          style: AppTypography.headlineMedium,
+          style: AppTypography.headlineMedium.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
         ),
         automaticallyImplyLeading: true,
       ),
@@ -84,21 +84,23 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     QuizState quizState,
     AppLanguage language,
   ) {
+    final theme = Theme.of(context);
+    
     // Loading state
     if (quizState.isLoading && quizState.currentCard == null) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(
-              color: AppColors.textPrimary,
+            CircularProgressIndicator(
+              color: theme.colorScheme.primary,
               strokeWidth: 2,
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
               AppStrings.generatingQuestions(language),
               style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
           ],
@@ -118,14 +120,16 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
             children: [
               Text(
                 AppStrings.error(language),
-                style: AppTypography.headlineMedium,
+                style: AppTypography.headlineMedium.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 errorText,
                 style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -184,15 +188,20 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
         ),
         const SizedBox(height: AppSpacing.lg),
         if (_showResult)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Text(
-              AppStrings.tapToContinue(language),
-              style: AppTypography.labelMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
+          Builder(
+            builder: (context) {
+              final theme = Theme.of(context);
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Text(
+                  AppStrings.tapToContinue(language),
+                  style: AppTypography.labelMedium.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              );
+            },
           ),
         const SizedBox(height: AppSpacing.md),
         Padding(

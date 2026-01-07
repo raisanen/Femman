@@ -68,11 +68,16 @@ class QuestionView extends StatelessWidget {
                 category: question.category,
                 language: language,
               ),
-              Text(
-                '$questionNumber/5',
-                style: AppTypography.labelLarge.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+              Builder(
+                builder: (context) {
+                  final theme = Theme.of(context);
+                  return Text(
+                    '$questionNumber/5',
+                    style: AppTypography.labelLarge.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -84,10 +89,17 @@ class QuestionView extends StatelessWidget {
             horizontal: AppSpacing.lg,
             vertical: AppSpacing.lg,
           ),
-          child: Text(
-            question.getText(language),
-            style: AppTypography.bodyLarge,
-            textAlign: TextAlign.left,
+          child: Builder(
+            builder: (context) {
+              final theme = Theme.of(context);
+              return Text(
+                question.getText(language),
+                style: AppTypography.bodyLarge.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
+                textAlign: TextAlign.left,
+              );
+            },
           ),
         ),
 
@@ -129,18 +141,28 @@ class QuestionView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  AppStrings.funFact(language).toUpperCase(),
-                  style: AppTypography.labelMedium.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  funFact,
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                Builder(
+                  builder: (context) {
+                    final theme = Theme.of(context);
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppStrings.funFact(language).toUpperCase(),
+                          style: AppTypography.labelMedium.copyWith(
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          funFact,
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),

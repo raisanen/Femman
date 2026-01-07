@@ -22,7 +22,7 @@ class StatsService {
   /// Initialize Hive boxes and load current stats
   Future<void> init() async {
     // Register Hive adapters if not already registered
-    // Note: Category (1) and Difficulty (2) should be registered in QuestionCacheService
+    // Register Category and Difficulty adapters for stats storage
     // but we register them here too to be safe
     if (!Hive.isAdapterRegistered(1)) {
       Hive.registerAdapter(CategoryAdapter());
@@ -56,8 +56,14 @@ class StatsService {
   }
 
   /// Get current player statistics
+  /// Always returns the latest in-memory stats
   PlayerStats getStats() {
-    return _currentStats ?? PlayerStats.initial();
+    // Ensure we return the most up-to-date stats
+    // If _currentStats is null, try loading from Hive as fallback
+    if (_currentStats == null) {
+      _currentStats = _statsBox.get(_statsKey) ?? PlayerStats.initial();
+    }
+    return _currentStats!;
   }
 
   /// Get current game session (or create new one)
@@ -82,8 +88,21 @@ class StatsService {
     final stats = getStats();
     _currentStats = stats.updateWithResult(result, _currentSession!.currentStreak);
 
-    // Save updated stats
+    // Save updated stats to Hive
     await _saveStats();
+    
+    // Reload from Hive to ensure consistency and trigger any listeners
+    // This ensures the next getStats() call gets the saved data
+    final savedStats = _statsBox.get(_statsKey);
+    if (savedStats != null) {
+      _currentStats = savedStats;
+    }
+    
+    // Reload session from Hive to ensure consistency
+    final savedSession = _sessionBox.get(_currentSession!.id);
+    if (savedSession != null) {
+      _currentSession = savedSession;
+    }
   }
 
   /// Get the current adaptive difficulty for a specific category

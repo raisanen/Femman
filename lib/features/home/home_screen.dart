@@ -4,6 +4,7 @@ import 'package:femman/core/constants/app_spacing.dart';
 import 'package:femman/core/constants/app_strings.dart';
 import 'package:femman/core/theme/app_colors.dart';
 import 'package:femman/core/theme/app_typography.dart';
+import 'package:femman/core/utils/extensions.dart';
 import 'package:femman/providers/settings_providers.dart';
 
 /// Minimal Swiss-typography-inspired home screen.
@@ -18,9 +19,10 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final language = ref.watch(languageProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -32,7 +34,9 @@ class HomeScreen extends ConsumerWidget {
                 // App title
                 Text(
                   AppStrings.appTitle(language).toUpperCase(),
-                  style: AppTypography.displayLarge,
+                  style: AppTypography.displayLarge.copyWith(
+                    color: theme.colorScheme.onSurface,
+                  ),
                   textAlign: TextAlign.center,
                 ),
 
@@ -43,7 +47,7 @@ class HomeScreen extends ConsumerWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.textPrimary,
+                      backgroundColor: theme.colorScheme.primary,
                       foregroundColor: AppColors.white,
                       padding: const EdgeInsets.symmetric(
                         vertical: AppSpacing.md,
@@ -72,7 +76,9 @@ class HomeScreen extends ConsumerWidget {
                   width: double.infinity,
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.borderDefault),
+                      side: BorderSide(
+                        color: context.borderColor,
+                      ),
                       padding: const EdgeInsets.symmetric(
                         vertical: AppSpacing.md,
                       ),
@@ -86,7 +92,7 @@ class HomeScreen extends ConsumerWidget {
                     child: Text(
                       AppStrings.statsButton(language),
                       style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textPrimary,
+                        color: context.textPrimary,
                       ),
                     ),
                   ),
@@ -98,9 +104,9 @@ class HomeScreen extends ConsumerWidget {
                 Align(
                   alignment: Alignment.centerRight,
                   child: IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.settings_outlined,
-                      color: AppColors.textSecondary,
+                      color: context.textSecondary,
                     ),
                     tooltip: AppStrings.settingsButton(language),
                     onPressed: () {

@@ -19,6 +19,7 @@ class CategoryBreakdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: Category.values.map((category) {
@@ -43,7 +44,9 @@ class CategoryBreakdown extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: AppTypography.bodyMedium,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -51,8 +54,9 @@ class CategoryBreakdown extends StatelessWidget {
               Text(
                 isCorrect ? '✓' : '✗',
                 style: AppTypography.bodyMedium.copyWith(
-                  color:
-                      isCorrect ? AppColors.textPrimary : AppColors.textSecondary,
+                  color: isCorrect
+                      ? theme.colorScheme.onSurface
+                      : theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
             ],

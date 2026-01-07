@@ -27,6 +27,7 @@ class ProgressDots extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final dots = List<Widget>.generate(total, (index) {
       final symbol = _symbolForIndex(index);
 
@@ -35,7 +36,7 @@ class ProgressDots extends StatelessWidget {
         child: Text(
           symbol,
           style: AppTypography.labelMedium.copyWith(
-            color: AppColors.textSecondary,
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
       );

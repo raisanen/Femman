@@ -60,9 +60,6 @@ class _FemmanAppState extends ConsumerState<FemmanApp> {
     // Initialize question service (loads questions from JSON)
     final questionService = ref.read(questionServiceProvider);
     await questionService.init();
-
-    // Warm up cache on startup (loads questions from JSON)
-    await ref.read(quizNotifierProvider.notifier).warmupCache();
   }
 
   @override
@@ -94,9 +91,9 @@ class _FemmanAppState extends ConsumerState<FemmanApp> {
         return MaterialApp(
           title: 'Femman',
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme.copyWith(
-            scaffoldBackgroundColor: AppColors.background,
-          ),
+          theme: AppTheme.darkTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeMode.dark,
           home: const HomeScreen(),
           routes: {
             '/quiz': (_) => const QuizScreen(),
@@ -128,21 +125,22 @@ class _LoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(
-              color: AppColors.textPrimary,
+            CircularProgressIndicator(
+              color: theme.colorScheme.primary,
               strokeWidth: 2,
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
               AppStrings.loading(language),
               style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
           ],
@@ -163,8 +161,9 @@ class _ErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -173,7 +172,9 @@ class _ErrorScreen extends StatelessWidget {
             children: [
               Text(
                 AppStrings.error(language),
-                style: AppTypography.headlineMedium,
+                style: AppTypography.headlineMedium.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -182,7 +183,7 @@ class _ErrorScreen extends StatelessWidget {
                     ? 'Kunde inte starta appen.'
                     : 'Failed to initialize the app.',
                 style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
                 textAlign: TextAlign.center,
               ),

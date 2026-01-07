@@ -42,12 +42,18 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       await ref
           .read(statsNotifierProvider.notifier)
           .recordCardResult(widget.result);
+      // Force a rebuild after stats are recorded
+      if (mounted) {
+        setState(() {});
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final language = ref.watch(languageProvider);
+    // Watch the stats notifier to know when recording is complete
+    final statsNotifierState = ref.watch(statsNotifierProvider);
     final currentStreak = ref.watch(currentStreakProvider);
     final totalCorrect = ref.watch(totalCorrectAnswersProvider);
 
@@ -68,12 +74,15 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       subtitle = AppStrings.keepTrying(language);
     }
 
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           AppStrings.cardComplete(language),
-          style: AppTypography.headlineMedium,
+          style: AppTypography.headlineMedium.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
         ),
         automaticallyImplyLeading: false,
       ),
@@ -89,19 +98,23 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                   children: [
                     Text(
                       scoreFraction,
-                      style: AppTypography.displayLarge,
+                      style: AppTypography.displayLarge.copyWith(
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
                       scoreText,
-                      style: AppTypography.bodyMedium,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: theme.colorScheme.onSurface,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       subtitle,
                       style: AppTypography.labelMedium.copyWith(
-                        color: AppColors.textSecondary,
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -115,7 +128,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               Text(
                 language == AppLanguage.sv ? 'RÄTT SVAR' : 'CORRECT',
                 style: AppTypography.labelLarge.copyWith(
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -138,13 +151,15 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 children: [
                   Text(
                     AppStrings.currentStreak(language, currentStreak),
-                    style: AppTypography.bodyMedium,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     AppStrings.totalCorrect(language, totalCorrect),
                     style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ],

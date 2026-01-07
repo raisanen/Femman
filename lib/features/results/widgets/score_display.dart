@@ -18,6 +18,7 @@ class ScoreDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final scoreText = AppStrings.scoreDisplay(
       language,
       result.score,
@@ -38,19 +39,23 @@ class ScoreDisplay extends StatelessWidget {
       children: [
         Text(
           '${result.score}/${result.results.length}',
-          style: AppTypography.displayLarge,
+          style: AppTypography.displayLarge.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
           scoreText,
-          style: AppTypography.bodyMedium,
+          style: AppTypography.bodyMedium.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 4),
         Text(
           subtitle,
           style: AppTypography.labelMedium.copyWith(
-            color: AppColors.textSecondary,
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
           ),
           textAlign: TextAlign.center,
         ),

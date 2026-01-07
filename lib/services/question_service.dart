@@ -1,53 +1,44 @@
-import 'dart:async';
+import 'dart:math';
 import 'package:uuid/uuid.dart';
 import '../models/question.dart';
 import '../models/quiz_card.dart';
 import '../models/category.dart';
 import '../models/difficulty.dart';
-import 'question_cache_service.dart';
 import 'json_question_loader.dart';
 
-/// Orchestrates question loading from JSON and caching.
-/// Loads questions from JSON assets and caches them for quick access.
+/// Service for loading and selecting questions from JSON assets.
+/// Questions are kept in memory with simple usage tracking to avoid repetition.
 class QuestionService {
-  final QuestionCacheService _cacheService;
   final JsonQuestionLoader _jsonLoader;
-
-  // Cache health thresholds
-  static const int _minQuestionsPerCategoryDifficulty = 10;
+  List<Question> _allQuestions = [];
+  final Set<String> _recentlyUsedIds = {};
+  static const int _recentUsageWindow = 50; // Avoid repeating last 50 questions
+  final _random = Random();
 
   QuestionService({
-    required QuestionCacheService cacheService,
     required JsonQuestionLoader jsonLoader,
-  })  : _cacheService = cacheService,
-        _jsonLoader = jsonLoader;
+  }) : _jsonLoader = jsonLoader;
 
-  /// Initialize all sub-services.
-  /// Loads questions from JSON and caches them.
+  /// Initialize the service by loading questions from JSON.
   Future<void> init() async {
-    await _cacheService.init();
-    
-    // Load questions from JSON and cache them
-    final questions = await _jsonLoader.loadQuestions();
-    await _cacheService.cacheQuestions(questions);
+    _allQuestions = await _jsonLoader.loadQuestions();
   }
 
   /// Get a quiz card with 5 questions (one per category) at specified difficulties
-  /// Uses cached questions from JSON
   Future<QuizCard> getQuizCard(Map<Category, Difficulty> difficulties) async {
     final questions = <Question>[];
     final missingCategories = <Category>[];
 
-    // Try to get questions from cache
+    // Get questions for each category
     for (final category in Category.values) {
       final difficulty = difficulties[category] ?? Difficulty.easy;
-      Question? question = _cacheService.getQuestion(category, difficulty);
+      Question? question = _getQuestion(category, difficulty);
 
-      // If cache miss for requested difficulty, try any difficulty for this category
+      // If not found for requested difficulty, try any difficulty for this category
       if (question == null) {
         for (final fallbackDifficulty in Difficulty.values) {
           if (fallbackDifficulty != difficulty) {
-            question = _cacheService.getQuestion(category, fallbackDifficulty);
+            question = _getQuestion(category, fallbackDifficulty);
             if (question != null) break;
           }
         }
@@ -56,34 +47,46 @@ class QuestionService {
       // Add question if found
       if (question != null) {
         questions.add(question);
+        _recentlyUsedIds.add(question.id);
+        
+        // Keep only recent N questions in the set
+        if (_recentlyUsedIds.length > _recentUsageWindow) {
+          // Remove oldest entries (simple approach: keep set size manageable)
+          final idsToRemove = _recentlyUsedIds.toList().take(
+            _recentlyUsedIds.length - _recentUsageWindow,
+          );
+          for (final id in idsToRemove) {
+            _recentlyUsedIds.remove(id);
+          }
+        }
       } else {
         missingCategories.add(category);
       }
     }
 
-    // If we don't have 5 questions, throw a clear error with diagnostics
+    // If we don't have 5 questions, throw a clear error
     if (questions.length != 5) {
-      final cacheCounts = _cacheService.getQuestionCounts();
-      final totalCacheCount = _cacheService.getTotalQuestionCount();
-      
-      // Build a detailed error message
       final buffer = StringBuffer();
       buffer.writeln('Failed to load quiz card: Only found ${questions.length}/5 questions.');
       buffer.writeln('Missing categories: ${missingCategories.map((c) => c.toString().split('.').last).join(', ')}.');
-      buffer.writeln('Total questions in cache: $totalCacheCount');
+      buffer.writeln('Total questions loaded: ${_allQuestions.length}');
       
-      if (totalCacheCount == 0) {
-        buffer.writeln('Cache is empty. Questions may not have loaded from JSON properly.');
+      if (_allQuestions.isEmpty) {
+        buffer.writeln('No questions loaded from JSON. Check assets/questions.json.');
       } else {
-        buffer.writeln('Cache breakdown by category/difficulty:');
+        // Show breakdown by category/difficulty
+        buffer.writeln('Question breakdown by category/difficulty:');
         for (final category in Category.values) {
           final catName = category.toString().split('.').last;
-          final counts = cacheCounts[category] ?? {};
-          final catTotal = counts.values.fold(0, (a, b) => a + b);
-          if (catTotal > 0) {
-            buffer.writeln('  $catName: ${counts.entries.map((e) => '${e.key.toString().split('.').last}=${e.value}').join(', ')}');
-          } else {
+          final catQuestions = _allQuestions.where((q) => q.category == category).toList();
+          if (catQuestions.isEmpty) {
             buffer.writeln('  $catName: none');
+          } else {
+            final byDifficulty = <Difficulty, int>{};
+            for (final q in catQuestions) {
+              byDifficulty[q.difficulty] = (byDifficulty[q.difficulty] ?? 0) + 1;
+            }
+            buffer.writeln('  $catName: ${byDifficulty.entries.map((e) => '${e.key.toString().split('.').last}=${e.value}').join(', ')}');
           }
         }
       }
@@ -100,122 +103,49 @@ class QuestionService {
     return quizCard;
   }
 
-  /// Get cache health statistics
-  CacheStats getCacheHealth() {
-    return _cacheService.getCacheStats();
+  /// Get a random question for the specified category and difficulty
+  /// Avoids recently used questions
+  Question? _getQuestion(Category category, Difficulty difficulty) {
+    // Filter questions by category and difficulty, excluding recently used
+    final candidates = _allQuestions.where((q) {
+      return q.category == category &&
+          q.difficulty == difficulty &&
+          !_recentlyUsedIds.contains(q.id);
+    }).toList();
+
+    if (candidates.isEmpty) {
+      // If no unused questions, try getting any question for this category/difficulty
+      final allCandidates = _allQuestions.where((q) {
+        return q.category == category && q.difficulty == difficulty;
+      }).toList();
+
+      if (allCandidates.isEmpty) return null;
+
+      // Return random from all candidates
+      return allCandidates[_random.nextInt(allCandidates.length)];
+    }
+
+    // Return random from unused candidates
+    return candidates[_random.nextInt(candidates.length)];
   }
 
-  /// Warmup cache on app startup
-  /// Ensures questions are loaded from JSON
+  /// Warmup on app startup (ensures questions are loaded)
+  /// Questions are already loaded during init, so this is a no-op
   Future<void> warmupCache() async {
-    // Questions are already loaded from JSON during init
-    // This method is kept for compatibility but does nothing
+    // Questions are already loaded during init
   }
 
-  /// Check if cache is healthy (has minimum questions for all combinations)
-  bool isCacheHealthy() {
-    final health = getCacheHealth();
-
-    for (final category in Category.values) {
-      for (final difficulty in Difficulty.values) {
-        if (health.getCount(category, difficulty) <
-            _minQuestionsPerCategoryDifficulty) {
-          return false;
-        }
-      }
-    }
-
-    return true;
+  /// Clear usage history (allows questions to be repeated immediately)
+  void clearUsageHistory() {
+    _recentlyUsedIds.clear();
   }
 
-  /// Get cache health summary
-  CacheHealthSummary getCacheHealthSummary() {
-    final health = getCacheHealth();
-    int healthyCount = 0;
-    int lowCount = 0;
-    int emptyCount = 0;
-
-    for (final category in Category.values) {
-      for (final difficulty in Difficulty.values) {
-        final count = health.getCount(category, difficulty);
-        if (count >= _minQuestionsPerCategoryDifficulty) {
-          healthyCount++;
-        } else if (count > 0) {
-          lowCount++;
-        } else {
-          emptyCount++;
-        }
-      }
-    }
-
-    return CacheHealthSummary(
-      totalCombinations: Category.values.length * Difficulty.values.length,
-      healthyCombinations: healthyCount,
-      lowCombinations: lowCount,
-      emptyCombinations: emptyCount,
-      totalQuestions: health.totalQuestions,
-      isGenerating: false,
-    );
-  }
-
-  /// Clear all cached questions
-  Future<void> clearCache() async {
-    await _cacheService.clearAll();
-  }
-
-  /// Clear usage history (allows questions to be repeated)
-  Future<void> clearUsageHistory() async {
-    await _cacheService.clearUsageHistory();
-  }
+  /// Get total number of loaded questions
+  int get totalQuestions => _allQuestions.length;
 
   /// Dispose resources
-  Future<void> dispose() async {
-    await _cacheService.dispose();
+  void dispose() {
+    _allQuestions.clear();
+    _recentlyUsedIds.clear();
   }
-}
-
-/// Summary of cache health across all category/difficulty combinations
-class CacheHealthSummary {
-  final int totalCombinations;
-  final int healthyCombinations;
-  final int lowCombinations;
-  final int emptyCombinations;
-  final int totalQuestions;
-  final bool isGenerating;
-
-  CacheHealthSummary({
-    required this.totalCombinations,
-    required this.healthyCombinations,
-    required this.lowCombinations,
-    required this.emptyCombinations,
-    required this.totalQuestions,
-    required this.isGenerating,
-  });
-
-  /// Overall health percentage (0.0 to 1.0)
-  double get healthPercentage =>
-      totalCombinations > 0 ? healthyCombinations / totalCombinations : 0.0;
-
-  /// Whether the cache is considered healthy overall
-  bool get isHealthy => emptyCombinations == 0 && lowCombinations == 0;
-
-  /// Status message
-  String get statusMessage {
-    if (isHealthy) {
-      return 'Cache is healthy with $totalQuestions questions';
-    } else if (emptyCombinations > 0) {
-      return 'Cache needs warmup: $emptyCombinations empty slots';
-    } else {
-      return 'Cache is low: $lowCombinations slots need refill';
-    }
-  }
-}
-
-/// Helper to run futures without awaiting (for fire-and-forget)
-void unawaited(Future<void> future) {
-  future.catchError((error) {
-    // In production, this should use proper logging
-    // ignore: avoid_print
-    print('Background task error: $error');
-  });
 }
