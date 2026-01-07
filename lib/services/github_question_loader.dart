@@ -143,24 +143,26 @@ class GitHubQuestionLoader {
 
   /// Parse category string to Category enum
   Category _parseCategory(String categoryStr) {
-    final normalized = categoryStr
-        .toLowerCase()
-        .replaceAll(RegExp(r'[\s\-_]'), ''); // remove spaces, hyphens, underscores
+    final norm = categoryStr.normalize();
 
-    if (normalized.contains('nowthen')) return Category.nowThen;
-    if (normalized.contains('entertainment')) return Category.entertainment;
-    if (normalized.contains('nearfar')) return Category.nearFar;
-    if (normalized.contains('sportmisc')) return Category.sportMisc;
-    if (normalized.contains('sciencetech')) return Category.scienceTech;
+    if (norm.contains('nowthen')) {
+      return Category.nowThen;
+    } else if (norm.contains('entertainment')) {
+      return Category.entertainment;
+    } else if (norm.contains('nearfar')) {
+      return Category.nearFar;
+    } else if (norm.contains('sportmisc')) {
+      return Category.sportMisc;
+    } else if (norm.contains('sciencetech')) {
+      return Category.scienceTech;
+    }
 
     throw ArgumentError('Unknown category: $categoryStr');
   }
 
   /// Parse difficulty string to Difficulty enum
   Difficulty _parseDifficulty(String difficultyStr) {
-    final norm = difficultyStr
-        .toLowerCase()
-        .replaceAll(RegExp(r'[\s\-_]'), ''); // remove spaces, hyphens, underscores
+    final norm = difficultyStr.normalize();
 
     if (norm.contains('easy')) {
       return Difficulty.easy;
@@ -169,6 +171,7 @@ class GitHubQuestionLoader {
     } else if (norm.contains('hard')) {
       return Difficulty.hard;
     }
+
     throw ArgumentError('Unknown difficulty: $difficultyStr');
   }
 
@@ -178,3 +181,8 @@ class GitHubQuestionLoader {
   }
 }
 
+extension on String {
+  String normalize() {
+    return this.toLowerCase().replaceAll(RegExp(r'[\s\-_]'), ''); // remove spaces, hyphens, underscores
+  }
+}
