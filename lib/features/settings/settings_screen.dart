@@ -77,12 +77,15 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.xl),
 
               // Reload questions from GitHub
-              ElevatedButton(
-                onPressed: () => _reloadQuestions(context, ref, language),
-                child: Text(
-                  language == AppLanguage.sv ? 'Ladda om frågor från GitHub' : 'Reload questions from GitHub',
-                  style: AppTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w800,
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _reloadQuestions(context, ref, language),
+                  child: Text(
+                    language == AppLanguage.sv ? 'Ladda om frågor från GitHub' : 'Reload questions from GitHub',
+                    style: AppTypography.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ),
@@ -90,36 +93,42 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
 
               // Theme toggle
-              ElevatedButton(
-                onPressed: () {
-                  ref.read(themeModeProvider.notifier).toggleTheme();
-                },
-                child: Builder(
-                  builder: (context) {
-                    final currentThemeMode = ref.watch(themeModeProvider);
-                    final isDark = currentThemeMode == ThemeMode.dark;
-                    final themeText = language == AppLanguage.sv
-                        ? (isDark ? 'Växla till ljust tema' : 'Växla till mörkt tema')
-                        : (isDark ? 'Switch to light theme' : 'Switch to dark theme');
-                    return Text(
-                      themeText,
-                      style: AppTypography.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    );
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    ref.read(themeModeProvider.notifier).toggleTheme();
                   },
+                  child: Builder(
+                    builder: (context) {
+                      final currentThemeMode = ref.watch(themeModeProvider);
+                      final isDark = currentThemeMode == ThemeMode.dark;
+                      final themeText = language == AppLanguage.sv
+                          ? (isDark ? 'Växla till ljust tema' : 'Växla till mörkt tema')
+                          : (isDark ? 'Switch to light theme' : 'Switch to dark theme');
+                      return Text(
+                        themeText,
+                        style: AppTypography.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
 
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.md),
 
               // Reset stats
-              TextButton(
-                onPressed: () => _confirmResetStats(context, ref, language),
-                child: Text(
-                  language == AppLanguage.sv ? 'Återställ statistik' : 'Reset stats',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: theme.colorScheme.onSurface,
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _confirmResetStats(context, ref, language),
+                  child: Text(
+                    language == AppLanguage.sv ? 'Återställ statistik' : 'Reset stats',
+                    style: AppTypography.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ),
