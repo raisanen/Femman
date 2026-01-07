@@ -4,12 +4,14 @@ import '../../models/card_result.dart';
 import '../../models/category.dart';
 import '../../providers/quiz_providers.dart';
 import '../../providers/stats_providers.dart';
+import '../../core/constants/app_strings.dart';
 
 /// State for the quiz controller
 class QuizState {
   final QuizCard? currentCard;
   final int currentQuestionIndex;
   final Map<Category, int?> answers;
+  final Map<Category, int> shuffledCorrectIndices; // Stores shuffled correct index per category
   final DateTime? timeStarted;
   final bool isLoading;
   final String? error;
@@ -18,6 +20,7 @@ class QuizState {
     this.currentCard,
     this.currentQuestionIndex = 0,
     required this.answers,
+    this.shuffledCorrectIndices = const {},
     this.timeStarted,
     this.isLoading = false,
     this.error,
@@ -27,6 +30,7 @@ class QuizState {
   factory QuizState.initial() {
     return QuizState(
       answers: {for (final category in Category.values) category: null},
+      shuffledCorrectIndices: {},
     );
   }
 
@@ -59,6 +63,7 @@ class QuizState {
     QuizCard? currentCard,
     int? currentQuestionIndex,
     Map<Category, int?>? answers,
+    Map<Category, int>? shuffledCorrectIndices,
     DateTime? timeStarted,
     bool? isLoading,
     String? error,
@@ -67,6 +72,7 @@ class QuizState {
       currentCard: currentCard ?? this.currentCard,
       currentQuestionIndex: currentQuestionIndex ?? this.currentQuestionIndex,
       answers: answers ?? this.answers,
+      shuffledCorrectIndices: shuffledCorrectIndices ?? this.shuffledCorrectIndices,
       timeStarted: timeStarted ?? this.timeStarted,
       isLoading: isLoading ?? false,
       error: error,
@@ -132,11 +138,20 @@ class QuizController extends StateNotifier<QuizState> {
         return;
       }
 
+      // Shuffle options for each question and store the new correct indices
+      final shuffledIndices = <Category, int>{};
+      for (final question in card.questions) {
+        // Shuffle options (using English as default, but both languages will be shuffled the same way)
+        final (_, newCorrectIndex) = question.getShuffledOptions(AppLanguage.en, seed: question.id.hashCode);
+        shuffledIndices[question.category] = newCorrectIndex;
+      }
+      
       // Update state with new card
       state = QuizState(
         currentCard: card,
         currentQuestionIndex: 0,
         answers: {for (final category in Category.values) category: null},
+        shuffledCorrectIndices: shuffledIndices,
         timeStarted: DateTime.now(),
         isLoading: false,
       );
@@ -211,10 +226,11 @@ class QuizController extends StateNotifier<QuizState> {
     final card = state.currentCard!;
     final resultMap = <Category, bool>{};
 
-    // Check each answer against correct answer
+    // Check each answer against correct answer (using shuffled index if available)
     for (final question in card.questions) {
       final selectedAnswer = state.answers[question.category];
-      final isCorrect = selectedAnswer == question.correctIndex;
+      final correctIndex = state.shuffledCorrectIndices[question.category] ?? question.correctIndex;
+      final isCorrect = selectedAnswer == correctIndex;
       resultMap[question.category] = isCorrect;
     }
 

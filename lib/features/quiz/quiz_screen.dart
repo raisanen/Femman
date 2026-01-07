@@ -183,6 +183,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
               showResult: _showResult,
               onAnswerSelected: _handleAnswerSelected,
               language: language,
+              shuffledCorrectIndex: quizState.shuffledCorrectIndices[question.category],
             ),
           ),
         ),

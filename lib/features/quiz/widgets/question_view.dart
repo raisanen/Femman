@@ -25,6 +25,7 @@ class QuestionView extends StatelessWidget {
     required this.showResult,
     required this.onAnswerSelected,
     required this.language,
+    this.shuffledCorrectIndex,
   });
 
   /// Question to display
@@ -44,10 +45,18 @@ class QuestionView extends StatelessWidget {
 
   /// Current app language
   final AppLanguage language;
+  
+  /// Shuffled correct index (if options were shuffled)
+  final int? shuffledCorrectIndex;
 
   @override
   Widget build(BuildContext context) {
-    final options = question.getOptions(language);
+    // Get shuffled options if shuffledCorrectIndex is provided, otherwise use original
+    final (shuffledOptions, _) = shuffledCorrectIndex != null
+        ? question.getShuffledOptions(language, seed: question.id.hashCode)
+        : (question.getOptions(language), question.correctIndex);
+    final options = shuffledOptions;
+    final correctIndex = shuffledCorrectIndex ?? question.correctIndex;
     final isAnswered = selectedAnswer != null;
     final funFact = question.getFunFact(language);
 
@@ -112,9 +121,9 @@ class QuestionView extends StatelessWidget {
             children: List.generate(options.length, (index) {
               final optionText = options[index];
               final isSelected = selectedAnswer == index;
-              final isCorrect = showResult && index == question.correctIndex;
+              final isCorrect = showResult && index == correctIndex;
               final isIncorrect =
-                  showResult && isSelected && index != question.correctIndex;
+                  showResult && isSelected && index != correctIndex;
 
               return Padding(
                 padding: EdgeInsets.only(

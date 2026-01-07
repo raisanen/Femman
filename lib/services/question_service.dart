@@ -12,7 +12,7 @@ class QuestionService {
   final JsonQuestionLoader _jsonLoader;
   List<Question> _allQuestions = [];
   final Set<String> _recentlyUsedIds = {};
-  static const int _recentUsageWindow = 50; // Avoid repeating last 50 questions
+  static const int _recentUsageWindow = 20; // Avoid repeating last 20 questions (reduced for small question pools)
   final _random = Random();
 
   QuestionService({
@@ -50,14 +50,13 @@ class QuestionService {
         _recentlyUsedIds.add(question.id);
         
         // Keep only recent N questions in the set
-        if (_recentlyUsedIds.length > _recentUsageWindow) {
-          // Remove oldest entries (simple approach: keep set size manageable)
-          final idsToRemove = _recentlyUsedIds.toList().take(
-            _recentlyUsedIds.length - _recentUsageWindow,
-          );
-          for (final id in idsToRemove) {
-            _recentlyUsedIds.remove(id);
-          }
+        // Use a simple approach: if we exceed the window, clear half of it
+        if (_recentlyUsedIds.length > _recentUsageWindow * 2) {
+          // Clear the set and start fresh to avoid memory issues
+          // This allows questions to be reused after a while
+          _recentlyUsedIds.clear();
+          // Re-add current question to the fresh set
+          _recentlyUsedIds.add(question.id);
         }
       } else {
         missingCategories.add(category);
@@ -114,14 +113,31 @@ class QuestionService {
     }).toList();
 
     if (candidates.isEmpty) {
-      // If no unused questions, try getting any question for this category/difficulty
+      // If no unused questions, clear the tracking for this category/difficulty
+      // and try again, or fall back to any question
       final allCandidates = _allQuestions.where((q) {
         return q.category == category && q.difficulty == difficulty;
       }).toList();
 
       if (allCandidates.isEmpty) return null;
 
-      // Return random from all candidates
+      // If we have very few questions, allow reuse by clearing tracking
+      if (allCandidates.length <= 5) {
+        // Clear recently used IDs for this category to allow reuse
+        final categoryQuestionIds = allCandidates.map((q) => q.id).toSet();
+        _recentlyUsedIds.removeWhere((id) => categoryQuestionIds.contains(id));
+        // Try again with fresh candidates
+        final freshCandidates = _allQuestions.where((q) {
+          return q.category == category &&
+              q.difficulty == difficulty &&
+              !_recentlyUsedIds.contains(q.id);
+        }).toList();
+        if (freshCandidates.isNotEmpty) {
+          return freshCandidates[_random.nextInt(freshCandidates.length)];
+        }
+      }
+
+      // Return random from all candidates as fallback
       return allCandidates[_random.nextInt(allCandidates.length)];
     }
 

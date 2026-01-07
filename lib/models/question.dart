@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:hive/hive.dart';
 import '../core/constants/app_strings.dart';
 import 'category.dart';
@@ -66,6 +67,29 @@ class Question {
   /// Get the answer options in the specified language
   List<String> getOptions(AppLanguage lang) {
     return lang == AppLanguage.sv ? optionsSv : optionsEn;
+  }
+  
+  /// Get shuffled options with the correct index adjusted
+  /// Returns a tuple of (shuffled options, new correct index)
+  /// Uses a deterministic shuffle based on question ID for consistency
+  (List<String>, int) getShuffledOptions(AppLanguage lang, {int? seed}) {
+    final options = List<String>.from(getOptions(lang));
+    final random = Random(seed ?? id.hashCode);
+    final shuffled = <String>[];
+    final originalIndices = <int>[0, 1, 2, 3];
+    
+    // Fisher-Yates shuffle
+    while (originalIndices.isNotEmpty) {
+      final index = random.nextInt(originalIndices.length);
+      final originalIndex = originalIndices.removeAt(index);
+      shuffled.add(options[originalIndex]);
+    }
+    
+    // Find the new index of the correct answer
+    final correctAnswer = options[correctIndex];
+    final newCorrectIndex = shuffled.indexOf(correctAnswer);
+    
+    return (shuffled, newCorrectIndex);
   }
 
   /// Get the fun fact in the specified language (if available)
